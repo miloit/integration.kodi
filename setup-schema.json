@@ -1,0 +1,63 @@
+{
+    "$schema": "http://json-schema.org",
+    "$id": "http://yio-remote.com/kodi.json",
+    "type": "object",
+    "title": "YIO Integration Kodi Schema",
+    "description": "Required data points to set up a kodi integrations.",
+    "default": {},
+    "additionalProperties": true,
+    "required": [
+        "access_token",
+	"refresh_token",
+        "client_id",
+        "client_secret",
+        "entity_id"
+    ],
+    "properties": {
+        "access_token": {
+            "$id": "#/properties/access_token",
+            "type": "string",
+            "title": "Access token",
+            "description": "Not user input. Access token generated after authenticating to Kodi.",
+            "default": ""
+        },
+	"refresh_token": {
+            "$id": "#/properties/refresh_token",
+            "type": "string",
+            "title": "Refresh token",
+            "description": "Not user input. Refresh token generated after authenticating to Kodi.",
+            "default": ""
+        },
+        "client_id": {
+            "$id": "#/properties/client_id",
+            "type": "string",
+            "title": "Client ID",
+            "description": "Client ID from the Kodi Developer page.",
+            "default": "",
+            "examples": [
+                "JKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiVlx1MDAxNcKbwoNUwoonbFPCu8KhwrYiLCJpYXQiO"
+            ]
+        },
+        "client_secret": {
+            "$id": "#/properties/client_secret",
+            "type": "string",
+            "title": "Client Secret",
+            "description": "Client secret from the Kodi Developer page.",
+            "default": "",
+            "examples": [
+                "JKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiVlx1MDAxNcKbwoNUwoonbFPCu8KhwrYiLCJpYXQiO"
+            ]
+        },
+        "entity_id": {
+            "$id": "#/properties/entity_id",
+            "type": "string",
+            "title": "The entity_id schema",
+            "description": "Not user input. A unique entity id.",
+            "default": "",
+            "examples": [
+                "kodi.kodi",
+                "6550f44c-7f11-11ea-bc55-0242ac130003"
+            ]
+        }
+    }
+}
