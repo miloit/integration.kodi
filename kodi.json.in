@@ -1,6 +1,6 @@
 {
   \"name\": \"$$TARGET\",
-  \"version\": \"$$SPOTIFY_VERSION\",
+  \"version\": \"$$KODI_VERSION\",
   \"build\": {
     \"date\": \"$$BUILDDATE\",
     \"qt\": \"$$QT_VERSION\",
@@ -16,7 +16,7 @@
         \"version_string\": \"$$QMAKE_HOST.version_string\"
     }
   },
-  \"copyright\" : \"(C) 2019-2020 Contributors of integration.spotify\",
+  \"copyright\" : \"(C) 2019-2020 Contributors of integration.kodi\",
   \"license\" : [
       \"YIO-Remote software is free software: you can redistribute it and/or modify\",
       \"it under the terms of the GNU General Public License as published by\",
@@ -26,13 +26,13 @@
   ],
   \"category\" : \"Integrations\",
   \"description\":  [
-      \"Spotify Integration for YIO\"
+      \"Kodi Integration for YIO\"
   ],
-  \"url\": \"https://github.com/YIO-Remote/integration.spotify\",
+  \"url\": \"https://github.com/YIO-Remote/integration.kodi\",
   \"dependencies\" : [
-      { \"name\" : \"app\", \"version\" : \"0.5.0\" },
+      { \"name\" : \"app\", \"version\" : \"0.0.1\" },
       { \"name\" : \"remoteOS\", \"version\" : \"0.4.0\" }
   ],
-  \"mdns\": \"_spotify-connect._tcp\",
+  \"mdns\": \"tttt\",
   \"setup_data\": $$CFG_SCHEMA
 }

@@ -2,6 +2,7 @@ TEMPLATE  = lib
 CONFIG   += plugin
 QT       += core quick network
 
+
 # === Version and build information ===========================================
 # If built in Buildroot use custom package version, otherwise Git
 isEmpty(YIO_BUILD_VERSION) {

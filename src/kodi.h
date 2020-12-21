@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * Copyright (C) 2019 Marton Borzak <hello@martonborzak.com>
+ * Copyright (C) 2020 Michael Lörcher <MichaelLoercher@web.de>
  *
  * This file is part of the YIO-Remote software project.
  *
@@ -21,109 +21,140 @@
  *****************************************************************************/
 
 #pragma once
-
+#include <QNetworkAccessManager>
+#include <QUrl>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QVariantMap>
+#include <QNetworkCookieJar>
+#include <QByteArray>
+#include <QDebug>
+#include <QAuthenticator>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QTimer>
+#include <QtWebSockets/QWebSocket>
+#include <QObject>
+#include <QQueue>
+#include <QProcess>
+
 
 #include "yio-interface/entities/mediaplayerinterface.h"
-#include "yio-model/mediaplayer/albummodel_mediaplayer.h"
+#include "yio-model/mediaplayer/tvchannelmodel_mediaplayer.h"
 #include "yio-model/mediaplayer/searchmodel_mediaplayer.h"
 #include "yio-plugin/integration.h"
 #include "yio-plugin/plugin.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//// SPOTIFY FACTORY
+//// Kodi FACTORY
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const bool USE_WORKER_THREAD = false;
 
-class SpotifyPlugin : public Plugin {
+//class QWebSocket;
+
+class KodiPlugin : public Plugin {
     Q_OBJECT
     Q_INTERFACES(PluginInterface)
-    Q_PLUGIN_METADATA(IID "YIO.PluginInterface" FILE "spotify.json")
+    Q_PLUGIN_METADATA(IID "YIO.PluginInterface" FILE "kodi.json")
 
- public:
-    SpotifyPlugin();
+public:
+    KodiPlugin();
 
     // Plugin interface
- protected:
+protected:
     Integration* createIntegration(const QVariantMap& config, EntitiesInterface* entities,
                                    NotificationsInterface* notifications, YioAPIInterface* api,
                                    ConfigInterface* configObj) override;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//// SPOTIFY CLASS
+//// Kodi CLASS
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class Spotify : public Integration {
+class Kodi : public Integration {
     Q_OBJECT
 
- public:
-    explicit Spotify(const QVariantMap& config, EntitiesInterface* entities, NotificationsInterface* notifications,
-                     YioAPIInterface* api, ConfigInterface* configObj, Plugin* plugin);
+public:
+    explicit Kodi(const QVariantMap& config, EntitiesInterface* entities, NotificationsInterface* notifications,
+                  YioAPIInterface* api, ConfigInterface* configObj, Plugin* plugin);
 
     void sendCommand(const QString& type, const QString& entitId, int command, const QVariant& param) override;
+    enum KodiGetCurrentPlayerState { GetActivePlayers, GetItem, Stopped, Copy, GetProperties };
+    Q_ENUM(KodiGetCurrentPlayerState);
 
- public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
+public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
     void connect() override;
     void disconnect() override;
     void enterStandby() override;
     void leaveStandby() override;
 
- signals:
-    void requestReady(const QVariantMap& obj, const QString& url);
 
- private:
-    // Spotify API calls
+    void registerInterface(const QString &name, QObject *interface);
+    void call(const QString &interface, const QString &method,
+              const QVariantList &args, std::function<void(QVariant)> callback = NULL);
+
+
+signals:
+    void requestReady(const QVariantMap& obj, const QString& url);
+    void requestReadyParser(const QJsonDocument& doc, const QString& url);
+    void requestReadyQstring(const QString& qstring, const QString& url);
+    void closed();
+
+
+
+private:
+    // Kodi API calls
     void search(QString query);
     void search(QString query, QString type);
     void search(QString query, QString type, QString limit, QString offset);
     void getAlbum(QString id);
-    void getPlaylist(QString id);
-    void getUserPlaylists();
-
-    // Spotify API authentication
-    void refreshAccessToken();
-
-    // Spotify Connect API calls
+    void getSingleTVChannelList(QString id);
+    void getCompleteTVChannelList();
+    // Kodi Connect API calls
     void getCurrentPlayer();
-
+    void getKodiAvailableTVChannelList();
+    void getKodiChannelNumberToTVHeadendUUIDMapping();
     void updateEntity(const QString& entity_id, const QVariantMap& attr);
 
     // get and post requests
-    void getRequest(const QString& url, const QString& params);
-    void postRequest(const QString& url, const QString& params);
-    void putRequest(const QString& url, const QString& params);  // TODO(marton): change param to QUrlQuery
-                                                                 // QUrlQuery query;
+    void getRequestWithAuthentication(const QString& url, const QString& method, const QString& user , const QString& password);
+    void postRequest(const QString& url, const QString& params, const int& id);
+    void postRequest(const QString& url, const QString& method, const QString& jsonstring);
 
-    //    query.addQueryItem("username", "test");
-    //    query.addQueryItem("password", "test");
 
-    //    url.setQuery(query.query());
-
- private slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
-    void onTokenTimeOut();
+private slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
     void onPollingTimerTimeout();
     void onProgressBarTimerTimeout();
+    void processMessage(QString message);
+    void onPollingTimer();
+    void onNetWorkAccessible(QNetworkAccessManager::NetworkAccessibility accessibility);
 
- private:
+private:
+    bool m_TVHeadendConfigured = false;
+    int m_currentkodiplayerid = -1;
+    QString m_currentKodiMediaType = "notset";
+    QString m_currentkodiplayertype = "unknown";
     bool    m_startup = true;
     QString m_entityId;
 
-    // polling timer
+
+    // polling tiQQueue m_sendQueue;mer
     QTimer* m_pollingTimer;
     QTimer* m_progressBarTimer;
-
     int m_progressBarPosition = 0;
 
-    // Spotify auth stuff
-    QString m_clientId;
-    QString m_clientSecret;
-    QString m_accessToken;
-    QString m_refreshToken;
-    int     m_tokenExpire = 0;  // in seconds
-    QTimer* m_tokenTimeOutTimer;
-    QString m_apiURL = "https://api.spotify.com";
+    // Kodi auth stuff
+    QMap <int, QString> m_mapKodiChannelNumberToTVHeadendUUID;
+    QString m_KodiClientPassword;
+    QString m_KodiClientUser;
+    QString m_KodiClientUrl;
+    QString m_KodiClientPort;
+    QString m_TvheadendClientPassword;
+    QString m_TvheadendClientUser;
+    QString m_TvheadendClientUrl;
+    QString m_TvheadendClientPort;
+    QList<QVariant> m_KodiTVChannelList;
+    bool m_xml = false;
+    KodiGetCurrentPlayerState m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
 };
