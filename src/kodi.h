@@ -80,7 +80,7 @@ public:
                   YioAPIInterface* api, ConfigInterface* configObj, Plugin* plugin);
 
     void sendCommand(const QString& type, const QString& entitId, int command, const QVariant& param) override;
-    enum KodiGetCurrentPlayerState { GetActivePlayers, GetItem, Stopped, Copy, GetProperties };
+    enum KodiGetCurrentPlayerState { GetActivePlayers, GetItem, PrepareDownload, Stopped, GetProperties };
     Q_ENUM(KodiGetCurrentPlayerState);
 
 public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
@@ -131,7 +131,8 @@ private slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
     void onNetWorkAccessible(QNetworkAccessManager::NetworkAccessibility accessibility);
 
 private:
-    bool m_TVHeadendConfigured = false;
+    bool m_flagTVHeadendConfigured = false;
+    bool m_flagKodiConfigured = false;
     int m_currentkodiplayerid = -1;
     QString m_currentKodiMediaType = "notset";
     QString m_currentkodiplayertype = "unknown";
@@ -157,4 +158,6 @@ private:
     QList<QVariant> m_KodiTVChannelList;
     bool m_xml = false;
     KodiGetCurrentPlayerState m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
+    QString m_KodiGetCurrentPlayerThumbnail = "";
+    int m_globalKodiRequestID = 12345;
 };
