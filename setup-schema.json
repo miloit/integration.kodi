@@ -19,7 +19,7 @@
     ],
     "properties": {
     	"kodiclient_url": {
-            "$id": "#/properties/client_url",
+            "$id": "#/properties/client_url", 
             "type": "string",
             "title": "Client url",
             "description": "Client url from the Kodi Developer page.",
