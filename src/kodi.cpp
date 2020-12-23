@@ -96,13 +96,14 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
                       << "SEEK"
                       << "SHUFFLE"
                       << "SEARCH"
-                      << "SPEAKER_CONTROL"
+                      << "MEDIAPLAYERCOMMAND"
+                      << "MEDIAPLAYERREMOTE"
                       << "TVCHANNELLIST";
     addAvailableEntity(m_entityId, "media_player", integrationId(), friendlyName(), supportedFeatures);
 }
 
 void Kodi::connect() {
-    setState(CONNECTED);
+    setState(CONNECTING);
 
     qCDebug(m_logCategory) << "STARTING Kodi";
 
@@ -132,6 +133,7 @@ void Kodi::connect() {
         qCDebug(m_logCategory) << "Kodi not confgured";
         m_flagKodiConfigured = false;
     }
+    setState(CONNECTED);
 }
 
 
