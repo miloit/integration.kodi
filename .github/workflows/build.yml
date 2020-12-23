@@ -10,9 +10,9 @@
     pull_request:
 
   env:
-    APP_NAME: YIO-integration.openhab
-    PROJECT_NAME: integration.openhab
-    HASH_FILENAME: yio-integration-openhab.hash
+    APP_NAME: YIO-integration.kodi
+    PROJECT_NAME: integration.kodi
+    HASH_FILENAME: yio-integration-kodi.hash
 
   jobs:
     build:
