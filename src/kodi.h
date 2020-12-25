@@ -73,7 +73,7 @@ public:
                   YioAPIInterface* api, ConfigInterface* configObj, Plugin* plugin);
 
     void sendCommand(const QString& type, const QString& entitId, int command, const QVariant& param) override;
-    enum KodiGetCurrentPlayerState { GetActivePlayers, GetItem, PrepareDownload, Stopped, GetProperties };
+    enum KodiGetCurrentPlayerState { GetActivePlayers, GetItem, PrepareDownload, Stopped, GetProperties, NotActive };
     Q_ENUM(KodiGetCurrentPlayerState);
 
 public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
@@ -90,6 +90,7 @@ public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
 
 signals:
     void requestReady(const QVariantMap& obj, const QString& url);
+    void requestReadyt(const QVariantMap& obj, const QString& url);
     void requestReadyParser(const QJsonDocument& doc, const QString& url);
     void requestReadyQstring(const QString& qstring, const QString& url);
     void closed();
@@ -127,9 +128,9 @@ private:
     QString m_TvheadendClientUrl;
     QString m_TvheadendClientPort;
     QList<QVariant> m_KodiTVChannelList;
-    bool m_xml = false;
     KodiGetCurrentPlayerState m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
-    QString m_KodiGetCurrentPlayerThumbnail = "";
+    QString m_KodiCurrentPlayerThumbnail = "";
+    QString m_KodiCurrentPlayerTitle = "";
     int m_globalKodiRequestID = 12345;
     int m_tvProgrammExpireTimeInHours = 2;
     int m_EPGExpirationTimestamp = 0;
@@ -149,6 +150,7 @@ private:
     void getKodiChannelNumberToTVHeadendUUIDMapping();
     void updateEntity(const QString& entity_id, const QVariantMap& attr);
     void getTVEPGfromTVHeadend();
+    void getTVChannelLogos();
     // get and post requests
     void getRequestWithAuthentication(const QString& url, const QString& method,
                                       const QString& user, const QString& password);
