@@ -419,7 +419,7 @@ void Kodi::getSingleTVChannelList(QString param) {
             channelnumber = m_KodiTVChannelList[i].toMap().value("channelnumber").toString();
         }
     }
-   if (channelnumber != "0" &&  m_flagTVHeadendConfigured) {
+    if (channelnumber != "0" &&  m_flagTVHeadendConfigured) {
         QObject::connect(this, &Kodi::requestReadyQstring, context_getTVChannelList,
                          [=](const QString& answer, const QString& rUrl) {
             if (rUrl == "tvprogrammparser") {
@@ -865,7 +865,7 @@ void Kodi::getCurrentPlayer() {
         } else if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::PrepareDownload) {
             QString jsonstring = "{\"jsonrpc\": \"2.0\", \"method\": \"Files.PrepareDownload\", "
                                  "\"params\": { \"path\": \"" +m_KodiCurrentPlayerThumbnail+"\" }, "
-                                                                                               "\"id\": "+QString::number(m_globalKodiRequestID)+"}";
+                                                                                            "\"id\": "+QString::number(m_globalKodiRequestID)+"}";
             postRequest(m_KodiClientUrl +":" + m_KodiClientPort +"/jsonrpc", "Files.PrepareDownload", jsonstring);
         }
     }
