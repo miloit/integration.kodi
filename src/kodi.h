@@ -30,13 +30,8 @@
 #include <QByteArray>
 #include <QDebug>
 #include <QAuthenticator>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QTimer>
-#include <QtWebSockets/QWebSocket>
 #include <QObject>
-#include <QQueue>
-#include <QProcess>
 
 
 #include "yio-interface/entities/mediaplayerinterface.h"
@@ -159,5 +154,4 @@ private:
                                       const QString& user, const QString& password);
     void postRequest(const QString& url, const QString& params, const int& id);
     void postRequest(const QString& url, const QString& method, const QString& jsonstring);
-
 };
