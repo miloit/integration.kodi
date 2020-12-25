@@ -540,7 +540,7 @@ void Kodi::getSingleTVChannelList(QString param) {
                                          m_TvheadendClientUser, m_TvheadendClientPassword);
         } else {
             getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +
-                                         "/xmltv/channels/","tvprogrammparser", m_TvheadendClientUser,
+                                         "/xmltv/channels/", "tvprogrammparser", m_TvheadendClientUser,
                                          m_TvheadendClientPassword);
         }
     } else if (channelnumber != "0" && !m_xml && m_flagTVHeadendConfigured) {
@@ -996,18 +996,18 @@ void Kodi::getCurrentPlayer() {
     });
 
     if (m_flagKodiConfigured) {
-        if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::GetActivePlayers || m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::Stopped){
+        if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::GetActivePlayers || m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::Stopped) {
             postRequest(m_KodiClientUrl +":" + m_KodiClientPort +"/jsonrpc", method, m_globalKodiRequestID);
-        } else if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::GetItem){
+        } else if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::GetItem) {
             QString jsonstring;
-            if (m_currentkodiplayertype == "video"){
+            if (m_currentkodiplayertype == "video") {
                 jsonstring = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.GetItem\",\"params\":"
                              "{ \"properties\": [\"title\", \"album\", \"artist\", \"season\", \"episode\","
                              " \"duration\", \"showtitle\", \"tvshowid\", \"thumbnail\", \"file\", \"fanart\","
                              " \"streamdetails\"], \"playerid\": "
                              "" + QString::number(m_currentkodiplayerid) + " }, "
                                                                            "\"id\": "+QString::number(m_globalKodiRequestID)+"}";
-            }else if (m_currentkodiplayertype == "audio"){
+            }else if (m_currentkodiplayertype == "audio") {
                 jsonstring = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.GetItem\",\"params\":"
                              "{ \"properties\": [\"title\", \"album\", \"artist\", \"season\", "
                              "\"episode\", \"duration\", \"showtitle\", \"tvshowid\", \"thumbnail\", "
@@ -1016,14 +1016,13 @@ void Kodi::getCurrentPlayer() {
                                                                            ""+QString::number(m_globalKodiRequestID)+"}";
             }
             postRequest(m_KodiClientUrl +":" + m_KodiClientPort +"/jsonrpc", "Player.GetItem", jsonstring);
-        } else if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::GetProperties){
+        } else if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::GetProperties) {
             QString jsonstring = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.GetProperties\", "
                                  "\"params\": { \"playerid\":" +QString::number(m_currentkodiplayerid) +", "
                                                                                                         "\"properties\": [\"totaltime\", \"time\", \"speed\"] }, "
                                                                                                         "\"id\": "+QString::number(m_globalKodiRequestID)+"}";
             postRequest(m_KodiClientUrl +":" + m_KodiClientPort +"/jsonrpc", "Player.GetProperties", jsonstring);
-        } else if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::PrepareDownload)
-        {
+        } else if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::PrepareDownload) {
             QString jsonstring = "{\"jsonrpc\": \"2.0\", \"method\": \"Files.PrepareDownload\", "
                                  "\"params\": { \"path\": \"" +m_KodiGetCurrentPlayerThumbnail+"\" }, "
                                                                                                "\"id\": "+QString::number(m_globalKodiRequestID)+"}";
