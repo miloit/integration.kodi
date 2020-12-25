@@ -730,7 +730,7 @@ void Kodi::getCurrentPlayer() {
             if (map.contains("result")) {
                 if (map.value("result").toMap().value("item").toMap().contains("type")) {
                     if (map.value("result").toMap().value("item").toMap().value("type") == "channel") {
-                        if ( map.value("result").toMap().value("item").toMap().value("title").toString() == m_KodiCurrentPlayerTitle) {
+                        if (map.value("result").toMap().value("item").toMap().value("title").toString() == m_KodiCurrentPlayerTitle) {
                             m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
                         } else {
                             QVariant fanart = map.value("result").toMap().value("item").toMap().value("fanart");
