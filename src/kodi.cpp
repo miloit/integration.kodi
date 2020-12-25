@@ -1007,7 +1007,7 @@ void Kodi::getCurrentPlayer() {
                              " \"streamdetails\"], \"playerid\": "
                              "" + QString::number(m_currentkodiplayerid) + " }, "
                                                                            "\"id\": "+QString::number(m_globalKodiRequestID)+"}";
-            }else if (m_currentkodiplayertype == "audio") {
+            } else if (m_currentkodiplayertype == "audio") {
                 jsonstring = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.GetItem\",\"params\":"
                              "{ \"properties\": [\"title\", \"album\", \"artist\", \"season\", "
                              "\"episode\", \"duration\", \"showtitle\", \"tvshowid\", \"thumbnail\", "
