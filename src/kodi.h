@@ -116,7 +116,7 @@ private:
     void getKodiAvailableTVChannelList();
     void getKodiChannelNumberToTVHeadendUUIDMapping();
     void updateEntity(const QString& entity_id, const QVariantMap& attr);
-
+    void getTVEPGfromTVHeadend();
     // get and post requests
     void getRequestWithAuthentication(const QString& url, const QString& method, const QString& user , const QString& password);
     void postRequest(const QString& url, const QString& params, const int& id);
@@ -160,4 +160,8 @@ private:
     KodiGetCurrentPlayerState m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
     QString m_KodiGetCurrentPlayerThumbnail = "";
     int m_globalKodiRequestID = 12345;
+    int m_tvProgrammExpireTimeInHours = 2;
+    int m_EPGExpirationTimestamp = 0;
+    QList<QVariant> m_currentEPG;
+
 };

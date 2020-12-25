@@ -28,6 +28,7 @@
 #include <QTextCodec>
 #include <QXmlStreamReader>
 #include <QProcess>
+#include <QDate>
 
 KodiPlugin::KodiPlugin() : Plugin("yio.plugin.kodi", USE_WORKER_THREAD) {}
 
@@ -110,6 +111,7 @@ void Kodi::connect() {
     if ( m_TvheadendClientUrl != "" && m_TvheadendClientPort != ""){
         if (QProcess::execute("curl", QStringList() << "-s" << m_TvheadendClientUrl+":"+m_TvheadendClientPort) == 0) {
             m_flagTVHeadendConfigured = true;
+            getTVEPGfromTVHeadend();
         } else {
             qCDebug(m_logCategory) << "TVHeadend not confgured";
             m_flagTVHeadendConfigured = false;
@@ -378,7 +380,30 @@ void Kodi::getAlbum(QString id) {
     });
     //getRequest(url, id);
 }
+void Kodi::getTVEPGfromTVHeadend()
+{
+    QObject* context_getTVEPGfromTVHeadend = new QObject(this);
+    QObject::connect(this, &Kodi::requestReadyQstring, context_getTVEPGfromTVHeadend, [=](const QString& answer, const QString& rUrl) {
+        if (rUrl == "getTVEPGfromTVHeadend") {
+            QJsonParseError parseerror;
+            QJsonDocument   doc = QJsonDocument::fromJson(answer.toUtf8(), &parseerror);
+            if (parseerror.error != QJsonParseError::NoError) {
+                qCWarning(m_logCategory) << "JSON error : " << parseerror.errorString();
+                return;
+            }
 
+            // createa a map object
+            m_currentEPG = doc.toVariant().toMap().value("entries").toList();
+            m_EPGExpirationTimestamp = QDateTime(QDate::currentDate()).toTime_t() + (m_tvProgrammExpireTimeInHours * 3600);
+
+        }
+        context_getTVEPGfromTVHeadend->deleteLater();
+    });
+    int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
+    if (m_flagTVHeadendConfigured && temp_Timestamp < 0){
+        getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +"/api/epg/events/grid?limit=2000","getTVEPGfromTVHeadend",m_TvheadendClientUser, m_TvheadendClientPassword);
+    }
+}
 void Kodi::getSingleTVChannelList(QString param) {
     QObject* context_getTVChannelList = new QObject(this);
 
@@ -511,11 +536,10 @@ void Kodi::getSingleTVChannelList(QString param) {
         }
     }else if (channelnumber != "0" && !m_xml && m_flagTVHeadendConfigured) {
         QObject::connect(this, &Kodi::requestReadyQstring, context_getTVChannelList, [=](const QString& answer, const QString& rUrl) {
-            QXmlStreamReader reader(answer);
             if (rUrl == "tvprogrammparser") {
                 EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
                 QJsonParseError parseerror;
-                QList<QVariant> mapw;
+                //QList<QVariant> mapw;
                 QJsonDocument   doc = QJsonDocument::fromJson(answer.toUtf8(), &parseerror);
                 if (parseerror.error != QJsonParseError::NoError) {
                     qCWarning(m_logCategory) << "JSON error : " << parseerror.errorString();
@@ -523,11 +547,11 @@ void Kodi::getSingleTVChannelList(QString param) {
                 }
 
                 // createa a map object
-                mapw = doc.toVariant().toMap().value("entries").toList();
+                //mapw = doc.toVariant().toMap().value("entries").toList();
                 QMap<QString, QString> currenttvprogramm;
-                for (int i = 0; i < mapw.length(); i++) {
-                    if( mapw[i].toMap().value("channelNumber") == channelnumber) {
-                        currenttvprogramm.insert(mapw[i].toMap().value("start").toString(), mapw[i].toMap().value("title").toString());
+                for (int i = 0; i < m_currentEPG.length(); i++) {
+                    if( m_currentEPG[i].toMap().value("channelNumber") == channelnumber) {
+                        currenttvprogramm.insert(m_currentEPG[i].toMap().value("start").toString(), m_currentEPG[i].toMap().value("title").toString());
                     }
                 }
                 //QList<QString> list = map;
@@ -575,7 +599,7 @@ void Kodi::getSingleTVChannelList(QString param) {
 
 
 
-        getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +"/api/epg/events/grid?limit=10000","tvprogrammparser",m_TvheadendClientUser, m_TvheadendClientPassword);
+        getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +"/api/epg/events/grid?limit=1","tvprogrammparser",m_TvheadendClientUser, m_TvheadendClientPassword);
 
     } else if (!m_flagTVHeadendConfigured){
         QObject::connect(this, &Kodi::requestReady, context_getTVChannelList, [=](const QVariantMap& map, const QString& rMethod) {
@@ -970,7 +994,7 @@ void Kodi::getCurrentPlayer() {
 
     if (m_flagKodiConfigured){
         if ( m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::GetActivePlayers || m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::Stopped){
-           postRequest(m_KodiClientUrl +":" + m_KodiClientPort +"/jsonrpc", method, m_globalKodiRequestID);
+            postRequest(m_KodiClientUrl +":" + m_KodiClientPort +"/jsonrpc", method, m_globalKodiRequestID);
         } else if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::GetItem){
             QString jsonstring;
             if (m_currentkodiplayertype == "video"){
@@ -1372,6 +1396,7 @@ void Kodi::postRequest(const QString& url, const QString& method, const QString&
 
 void Kodi::onPollingTimerTimeout() {
     getCurrentPlayer();
+    getTVEPGfromTVHeadend();
 }
 
 void Kodi::onProgressBarTimerTimeout() {
