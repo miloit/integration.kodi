@@ -108,7 +108,7 @@ void Kodi::connect() {
 
     qCDebug(m_logCategory) << "STARTING Kodi";
 
-    if ( m_TvheadendClientUrl != "" && m_TvheadendClientPort != ""){
+    if ( m_TvheadendClientUrl != "" && m_TvheadendClientPort != "") {
         if (QProcess::execute("curl", QStringList() << "-s" << m_TvheadendClientUrl+":"+m_TvheadendClientPort) == 0) {
             m_flagTVHeadendConfigured = true;
             getTVEPGfromTVHeadend();
@@ -120,11 +120,11 @@ void Kodi::connect() {
         qCDebug(m_logCategory) << "TVHeadend not confgured";
         m_flagTVHeadendConfigured = false;
     }
-    if ( m_KodiClientUrl != "" && m_KodiClientPort != ""){
+    if ( m_KodiClientUrl != "" && m_KodiClientPort != "" ) {
         if (QProcess::execute("curl", QStringList() << "-s" << m_KodiClientUrl+":"+m_KodiClientPort) == 0) {
             m_flagKodiConfigured = true;
             m_pollingTimer->start();
-            if ( m_KodiTVChannelList.count() == 0){
+            if ( m_KodiTVChannelList.count() == 0 ) {
                 getKodiAvailableTVChannelList();
             }
         } else {
@@ -297,10 +297,10 @@ void Kodi::search(QString query, QString type, QString limit, QString offset) {
                         }
                         if (image == "") {
                             image =
-                                    map_playlists[i].toMap().value("images").toList()[0].toMap().value("url").toString();
+                                    map_playlists[i].toMap().value("images").toList()[0].
+                                    toMap().value("url").toString();
                         }
                     }
-
                     SearchModelListItem item = SearchModelListItem(id, "playlist", title, subtitle, image, commands);
                     playlists->append(item);
                 }
@@ -327,8 +327,7 @@ void Kodi::search(QString query, QString type, QString limit, QString offset) {
         }
         context->deleteLater();
     });
-
-    //getRequest(url, "?q=" + query + "&type=" + type + "&limit=" + limit + "&offset=" + offset);
+    // getRequest(url, "?q=" + query + "&type=" + type + "&limit=" + limit + "&offset=" + offset);
 }
 
 void Kodi::getAlbum(QString id) {
@@ -359,13 +358,17 @@ void Kodi::getAlbum(QString id) {
 
             QStringList commands = {"PLAY"};
 
-            BrowsetvchannelModel* tvchannel = new BrowsetvchannelModel(nullptr, id, time, title, subtitle, type, image, commands);
+            BrowsetvchannelModel* tvchannel = new BrowsetvchannelModel(nullptr, id,
+                                                                       time, title, subtitle, type,
+                                                                       image, commands);
 
             // add tracks to album
             QVariantList tracks = map.value("tracks").toMap().value("items").toList();
             for (int i = 0; i < tracks.length(); i++) {
-                tvchannel->addtvchannelItem(tracks[i].toMap().value("id").toString(), "",tracks[i].toMap().value("name").toString(),
-                                            tracks[i].toMap().value("artists").toList()[0].toMap().value("name").toString(), "track",
+                tvchannel->addtvchannelItem(tracks[i].toMap().value("id").toString(), "",
+                        tracks[i].toMap().value("name").toString(),
+                        tracks[i].toMap().value("artists").toList()[0].toMap().value("name").toString(),
+                        "track",
                         "", commands);
             }
 
@@ -378,12 +381,13 @@ void Kodi::getAlbum(QString id) {
         }
         context->deleteLater();
     });
-    //getRequest(url, id);
+    // getRequest(url, id);
 }
-void Kodi::getTVEPGfromTVHeadend()
-{
+
+void Kodi::getTVEPGfromTVHeadend() {
     QObject* context_getTVEPGfromTVHeadend = new QObject(this);
-    QObject::connect(this, &Kodi::requestReadyQstring, context_getTVEPGfromTVHeadend, [=](const QString& answer, const QString& rUrl) {
+    QObject::connect(this, &Kodi::requestReadyQstring, context_getTVEPGfromTVHeadend,
+                     [=](const QString& answer, const QString& rUrl) {
         if (rUrl == "getTVEPGfromTVHeadend") {
             QJsonParseError parseerror;
             QJsonDocument   doc = QJsonDocument::fromJson(answer.toUtf8(), &parseerror);
@@ -395,12 +399,11 @@ void Kodi::getTVEPGfromTVHeadend()
             // createa a map object
             m_currentEPG = doc.toVariant().toMap().value("entries").toList();
             m_EPGExpirationTimestamp = QDateTime(QDate::currentDate()).toTime_t() + (m_tvProgrammExpireTimeInHours * 3600);
-
         }
         context_getTVEPGfromTVHeadend->deleteLater();
     });
     int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
-    if (m_flagTVHeadendConfigured && temp_Timestamp < 0){
+    if ( m_flagTVHeadendConfigured && temp_Timestamp < 0 ) {
         getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +"/api/epg/events/grid?limit=2000","getTVEPGfromTVHeadend",m_TvheadendClientUser, m_TvheadendClientPassword);
     }
 }
@@ -419,12 +422,12 @@ void Kodi::getSingleTVChannelList(QString param) {
     {
         QObject::connect(this, &Kodi::requestReadyQstring, context_getTVChannelList, [=](const QString& answer, const QString& rUrl) {
             QXmlStreamReader reader(answer);
-            if (rUrl == "tvprogrammparser") {
+            if ( rUrl == "tvprogrammparser" ) {
                 EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
-                if (!answer.contains("<?xml")) {
+                if ( !answer.contains("<?xml") ) {
                     int currenttvchannelarrayid = 0;
-                    for (int i=0; i<m_KodiTVChannelList.length(); i++) {
-                        if ( m_KodiTVChannelList[i].toMap().value("channelid") == param){
+                    for ( int i=0; i<m_KodiTVChannelList.length(); i++ ) {
+                        if ( m_KodiTVChannelList[i].toMap().value("channelid") == param ) {
                             //currenttvchannel = m_KodiTVChannelList[i].toMap();
                             currenttvchannelarrayid = i;
                             break;
