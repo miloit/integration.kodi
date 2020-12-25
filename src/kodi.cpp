@@ -108,7 +108,7 @@ void Kodi::connect() {
 
     qCDebug(m_logCategory) << "STARTING Kodi";
 
-    if ( m_TvheadendClientUrl != "" && m_TvheadendClientPort != "") {
+    if ( m_TvheadendClientUrl != "" && m_TvheadendClientPort != "" ) {
         if (QProcess::execute("curl", QStringList() << "-s" << m_TvheadendClientUrl+":"+m_TvheadendClientPort) == 0) {
             m_flagTVHeadendConfigured = true;
             getTVEPGfromTVHeadend();
@@ -398,13 +398,16 @@ void Kodi::getTVEPGfromTVHeadend() {
 
             // createa a map object
             m_currentEPG = doc.toVariant().toMap().value("entries").toList();
-            m_EPGExpirationTimestamp = QDateTime(QDate::currentDate()).toTime_t() + (m_tvProgrammExpireTimeInHours * 3600);
+            m_EPGExpirationTimestamp = QDateTime(QDate::currentDate()).toTime_t() +
+                    (m_tvProgrammExpireTimeInHours * 3600);
         }
         context_getTVEPGfromTVHeadend->deleteLater();
     });
     int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
     if ( m_flagTVHeadendConfigured && temp_Timestamp < 0 ) {
-        getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +"/api/epg/events/grid?limit=2000","getTVEPGfromTVHeadend",m_TvheadendClientUser, m_TvheadendClientPassword);
+        getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +
+                                     "/api/epg/events/grid?limit=2000","getTVEPGfromTVHeadend",
+                                     m_TvheadendClientUser, m_TvheadendClientPassword);
     }
 }
 void Kodi::getSingleTVChannelList(QString param) {
@@ -412,18 +415,16 @@ void Kodi::getSingleTVChannelList(QString param) {
 
     QString channelnumber = "0";
     for (int i = 0; i < m_KodiTVChannelList.length(); i++) {
-        if (m_KodiTVChannelList[i].toMap().value("channelid").toString() == param)
-        {
+        if (m_KodiTVChannelList[i].toMap().value("channelid").toString() == param) {
             channelnumber = m_KodiTVChannelList[i].toMap().value("channelnumber").toString();
         }
-
     }
-    if (channelnumber != "0" && m_xml && m_flagTVHeadendConfigured)
-    {
+    if (channelnumber != "0" && m_xml && m_flagTVHeadendConfigured) {
         QObject::connect(this, &Kodi::requestReadyQstring, context_getTVChannelList, [=](const QString& answer, const QString& rUrl) {
             QXmlStreamReader reader(answer);
             if ( rUrl == "tvprogrammparser" ) {
-                EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
+                EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(
+                                                                            m_entityId));
                 if ( !answer.contains("<?xml") ) {
                     int currenttvchannelarrayid = 0;
                     for ( int i=0; i<m_KodiTVChannelList.length(); i++ ) {
@@ -433,13 +434,17 @@ void Kodi::getSingleTVChannelList(QString param) {
                             break;
                         }
                     }
-                    QString id = m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("channelid").toString();
-                    QString title = m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("label").toString();
+                    QString id = m_KodiTVChannelList[currenttvchannelarrayid].toMap().
+                            value("channelid").toString();
+                    QString title = m_KodiTVChannelList[currenttvchannelarrayid].toMap().
+                            value("label").toString();
                     QString subtitle = "";
                     QString type = "playlist";
-                    QString image = QString::fromStdString(QByteArray::fromPercentEncoding(m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("thumbnail").toString().toUtf8()).toStdString()).mid(8);
-                    if ( image.contains("127.0.0.1"))
-                    {
+                    QString image = QString::fromStdString(QByteArray::fromPercentEncoding(
+                                                               m_KodiTVChannelList[currenttvchannelarrayid].
+                                                               toMap().value("thumbnail").toString().toUtf8()).
+                                                           toStdString()).mid(8);
+                    if ( image.contains("127.0.0.1") ) {
                         image= image.replace("127.0.0.1", m_KodiClientUrl.mid(7));
                     }
                     QStringList commands = {};
@@ -455,44 +460,41 @@ void Kodi::getSingleTVChannelList(QString param) {
                         MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
                         me->setBrowseModel(tvchannel);
                     }
-                } else if (!reader.hasError()) {
+                } else if ( !reader.hasError() ) {
                     QMap<QString, QString> currenttvprogramm;
 
                     QString starttime = "";
                     QString title = "";
                     bool nextday = false;
-                    while (reader.readNext()) {
+                    while ( reader.readNext() ) {
                         QString z = reader.name().toString();
-                        if (reader.name().toString() =="programme"){
+                        if ( reader.name().toString() =="programme" ) {
                             QList<QXmlStreamAttribute> list = reader.attributes().toList();
-                            for ( const auto& element : list  )
-                            {
-                                if (element.name().toString() == "channel" && element.value().toString() == m_mapKodiChannelNumberToTVHeadendUUID.value(channelnumber.toInt())){
+                            for ( const auto& element : list  ) {
+                                if ( element.name().toString() == "channel" && element.value().toString() == m_mapKodiChannelNumberToTVHeadendUUID.value(channelnumber.toInt()) ) {
                                     starttime = reader.attributes().toList()[0].value().toString();
 
-                                    if (starttime.mid(6,2).toInt() > QDate::currentDate().toString("dd").toInt())
-                                    {
+                                    if ( starttime.mid(6,2).toInt() > QDate::currentDate().toString("dd").toInt() ) {
                                         nextday = true;
                                     }
 
-                                    while (reader.readNext()) {
-                                        if (reader.name().toString() == "title"){
+                                    while ( reader.readNext() ) {
+                                        if ( reader.name().toString() == "title" ){
                                             title = reader.readElementText();
                                             currenttvprogramm.insert(starttime, title);
                                             break;
                                         }
-
                                     }
                                 }
                             }
                         }
-                        if (nextday){
+                        if ( nextday ) {
                             break;
                         }
                     }
                     int currenttvchannelarrayid = 0;
-                    for (int i=0; i<m_KodiTVChannelList.length(); i++) {
-                        if ( m_KodiTVChannelList[i].toMap().value("channelid") == param){
+                    for ( int i=0; i<m_KodiTVChannelList.length(); i++ ) {
+                        if ( m_KodiTVChannelList[i].toMap().value("channelid") == param ) {
                             currenttvchannelarrayid = i;
                             break;
                         }
@@ -503,25 +505,21 @@ void Kodi::getSingleTVChannelList(QString param) {
                     QString type = "playlist";
                     QString time = "";
                     QString image = QString::fromStdString(QByteArray::fromPercentEncoding(m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("thumbnail").toString().toUtf8()).toStdString()).mid(8);
-                    if ( image.contains("127.0.0.1"))
-                    {
+                    if ( image.contains("127.0.0.1") ) {
                         image= image.replace("127.0.0.1", m_KodiClientUrl.mid(7));
                     }
                     QStringList commands = {"PLAY"};
 
                     BrowsetvchannelModel* album = new BrowsetvchannelModel(nullptr, id, time, title, subtitle, type, image, commands);
 
-                    for(auto key : currenttvprogramm.keys())
-                    {
+                    for( auto key : currenttvprogramm.keys() ) {
                         album->addtvchannelItem(m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("channelid").toString(),
                                                 key.mid(8,4),
                                                 currenttvprogramm.value(key),
                                                 "",
                                                 "tvchannel", "", commands);
                     }
-
-
-                    if (entity) {
+                    if ( entity ) {
                         MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
                         me->setBrowseModel(album);
                     }
@@ -531,15 +529,15 @@ void Kodi::getSingleTVChannelList(QString param) {
         });
 
 
-        if (channelnumber != "0"){
+        if ( channelnumber != "0" ) {
             getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +"/xmltv/channelnumber/"+channelnumber,"tvprogrammparser",m_TvheadendClientUser, m_TvheadendClientPassword);
         }else {
 
             getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +"/xmltv/channels/","tvprogrammparser",m_TvheadendClientUser, m_TvheadendClientPassword);
         }
-    }else if (channelnumber != "0" && !m_xml && m_flagTVHeadendConfigured) {
+    }else if ( channelnumber != "0" && !m_xml && m_flagTVHeadendConfigured ) {
         QObject::connect(this, &Kodi::requestReadyQstring, context_getTVChannelList, [=](const QString& answer, const QString& rUrl) {
-            if (rUrl == "tvprogrammparser") {
+            if ( rUrl == "tvprogrammparser" ) {
                 EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
                 QJsonParseError parseerror;
                 //QList<QVariant> mapw;
@@ -571,16 +569,14 @@ void Kodi::getSingleTVChannelList(QString param) {
                 QString type = "playlist";
                 QString time = "";
                 QString image = QString::fromStdString(QByteArray::fromPercentEncoding(m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("thumbnail").toString().toUtf8()).toStdString()).mid(8);
-                if ( image.contains("127.0.0.1"))
-                {
+                if ( image.contains("127.0.0.1") ) {
                     image= image.replace("127.0.0.1", m_KodiClientUrl.mid(7));
                 }
                 QStringList commands = {"PLAY"};
 
                 BrowsetvchannelModel* album = new BrowsetvchannelModel(nullptr, id, time, title, subtitle, type, image, commands);
 
-                for(auto key : currenttvprogramm.keys())
-                {
+                for( auto key : currenttvprogramm.keys() ) {
                     QDateTime timestamp;
                     timestamp.setTime_t(key.toUInt());
 
@@ -592,7 +588,7 @@ void Kodi::getSingleTVChannelList(QString param) {
                 }
 
 
-                if (entity) {
+                if ( entity ) {
                     MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
                     me->setBrowseModel(album);
                 }
@@ -604,15 +600,14 @@ void Kodi::getSingleTVChannelList(QString param) {
 
         getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +"/api/epg/events/grid?limit=1","tvprogrammparser",m_TvheadendClientUser, m_TvheadendClientPassword);
 
-    } else if (!m_flagTVHeadendConfigured){
+    } else if ( !m_flagTVHeadendConfigured ) {
         QObject::connect(this, &Kodi::requestReady, context_getTVChannelList, [=](const QVariantMap& map, const QString& rMethod) {
             if (rMethod == "getTVChannelList" && map.contains("result")) {
-                if (map.value("result") == "pong")
-                {
+                if ( map.value("result") == "pong" ) {
                     EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
                     int currenttvchannelarrayid = 0;
-                    for (int i=0; i<m_KodiTVChannelList.length(); i++) {
-                        if ( m_KodiTVChannelList[i].toMap().value("channelid") == param){
+                    for ( int i=0; i<m_KodiTVChannelList.length(); i++ ) {
+                        if ( m_KodiTVChannelList[i].toMap().value("channelid") == param ) {
                             //currenttvchannel = m_KodiTVChannelList[i].toMap();
                             currenttvchannelarrayid = i;
                             break;
@@ -623,8 +618,7 @@ void Kodi::getSingleTVChannelList(QString param) {
                     QString subtitle = "";
                     QString type = "tvchannellist";
                     QString image = QString::fromStdString(QByteArray::fromPercentEncoding(m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("thumbnail").toString().toUtf8()).toStdString()).mid(8);
-                    if ( image.contains("127.0.0.1"))
-                    {
+                    if ( image.contains("127.0.0.1") ) {
                         image= image.replace("127.0.0.1", m_KodiClientUrl.mid(7));
                     }
                     QStringList commands = {};
@@ -651,13 +645,12 @@ void Kodi::getSingleTVChannelList(QString param) {
     }else {
 
         QObject::connect(this, &Kodi::requestReady, context_getTVChannelList, [=](const QVariantMap& map, const QString& rMethod) {
-            if (rMethod == "getTVChannelList" && map.contains("result")) {
-                if (map.value("result") == "pong")
-                {
+            if ( rMethod == "getTVChannelList" && map.contains("result") ) {
+                if ( map.value("result") == "pong" ) {
                     EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
                     int currenttvchannelarrayid = 0;
-                    for (int i=0; i<m_KodiTVChannelList.length(); i++) {
-                        if ( m_KodiTVChannelList[i].toMap().value("channelid") == param){
+                    for ( int i=0; i<m_KodiTVChannelList.length(); i++ ) {
+                        if ( m_KodiTVChannelList[i].toMap().value("channelid") == param ) {
                             //currenttvchannel = m_KodiTVChannelList[i].toMap();
                             currenttvchannelarrayid = i;
                             break;
@@ -668,8 +661,7 @@ void Kodi::getSingleTVChannelList(QString param) {
                     QString subtitle = "";
                     QString type = "tvchannellist";
                     QString image = QString::fromStdString(QByteArray::fromPercentEncoding(m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("thumbnail").toString().toUtf8()).toStdString()).mid(8);
-                    if ( image.contains("127.0.0.1"))
-                    {
+                    if ( image.contains("127.0.0.1") ) {
                         image= image.replace("127.0.0.1", m_KodiClientUrl.mid(7));
                     }
                     QStringList commands = {};
@@ -681,7 +673,7 @@ void Kodi::getSingleTVChannelList(QString param) {
                                                 "",
                                                 "tvchannel", "", commands);
 
-                    if (entity) {
+                    if ( entity ) {
                         MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
                         me->setBrowseModel(tvchannel);
                     }
@@ -699,29 +691,29 @@ void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
     QObject* context_getKodiChannelNumberToTVHeadendUUIDMapping = new QObject(this);
     QString jsonstring;
     QObject::connect(this, &Kodi::requestReadyQstring, context_getKodiChannelNumberToTVHeadendUUIDMapping, [=](const QString& answer, const QString& rUrl) {
-        if (rUrl == "parser") {
-            if (m_xml){
+        if ( rUrl == "parser" ) {
+            if ( m_xml ){
                 QXmlStreamReader reader(answer);
-                if (!reader.hasError()) {
+                if ( !reader.hasError() ) {
                     QMap<QString, QString> currenttvprogramm;
                     QString starttime = "";
                     QString title = "";
                     QString uuid = "";
                     QString channelnumber = "";
-                    while (reader.readNext()) {
-                        if (reader.name().toString() =="programme"){
+                    while ( reader.readNext() ) {
+                        if ( reader.name().toString() =="programme" ) {
                             break;
                         }
-                        if (reader.name().toString() =="channel"){
+                        if ( reader.name().toString() =="channel" ) {
                             QString Z = reader.name().toString();
-                            if (reader.attributes().count()>0){
+                            if ( reader.attributes().count()>0 ) {
                                 QList<QXmlStreamAttribute> list = reader.attributes().toList();
                                 uuid = list[0].value().toString();
-                                while (reader.readNext()) {
-                                    if (reader.name().toString() == "icon"){
+                                while ( reader.readNext() ) {
+                                    if ( reader.name().toString() == "icon" ){
                                         break;
                                     }
-                                    if (reader.name().toString() == "display-name"){
+                                    if ( reader.name().toString() == "display-name" ) {
                                         QString tempReaderName = reader.readElementText();
                                         while (reader.readNext()) {
                                             if (reader.name().toString() == "display-name"){
