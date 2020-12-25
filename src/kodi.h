@@ -51,8 +51,6 @@
 
 const bool USE_WORKER_THREAD = false;
 
-//class QWebSocket;
-
 class KodiPlugin : public Plugin {
     Q_OBJECT
     Q_INTERFACES(PluginInterface)
@@ -101,28 +99,6 @@ signals:
     void requestReadyQstring(const QString& qstring, const QString& url);
     void closed();
 
-
-
-private:
-    // Kodi API calls
-    void search(QString query);
-    void search(QString query, QString type);
-    void search(QString query, QString type, QString limit, QString offset);
-    void getAlbum(QString id);
-    void getSingleTVChannelList(QString id);
-    void getCompleteTVChannelList();
-    // Kodi Connect API calls
-    void getCurrentPlayer();
-    void getKodiAvailableTVChannelList();
-    void getKodiChannelNumberToTVHeadendUUIDMapping();
-    void updateEntity(const QString& entity_id, const QVariantMap& attr);
-    void getTVEPGfromTVHeadend();
-    // get and post requests
-    void getRequestWithAuthentication(const QString& url, const QString& method, const QString& user , const QString& password);
-    void postRequest(const QString& url, const QString& params, const int& id);
-    void postRequest(const QString& url, const QString& method, const QString& jsonstring);
-
-
 private slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
     void onPollingTimerTimeout();
     void onProgressBarTimerTimeout();
@@ -163,5 +139,25 @@ private:
     int m_tvProgrammExpireTimeInHours = 2;
     int m_EPGExpirationTimestamp = 0;
     QList<QVariant> m_currentEPG;
+
+
+    // Kodi API calls
+    void search(QString query);
+    void search(QString query, QString type);
+    void search(QString query, QString type, QString limit, QString offset);
+    void getAlbum(QString id);
+    void getSingleTVChannelList(QString id);
+    void getCompleteTVChannelList();
+    // Kodi Connect API calls
+    void getCurrentPlayer();
+    void getKodiAvailableTVChannelList();
+    void getKodiChannelNumberToTVHeadendUUIDMapping();
+    void updateEntity(const QString& entity_id, const QVariantMap& attr);
+    void getTVEPGfromTVHeadend();
+    // get and post requests
+    void getRequestWithAuthentication(const QString& url, const QString& method,
+                                      const QString& user, const QString& password);
+    void postRequest(const QString& url, const QString& params, const int& id);
+    void postRequest(const QString& url, const QString& method, const QString& jsonstring);
 
 };
