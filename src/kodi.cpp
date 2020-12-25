@@ -576,7 +576,6 @@ void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
     QObject::connect(this, &Kodi::requestReadyQstring, context_getKodiChannelNumberToTVHeadendUUIDMapping,
                      [=](const QString& answer, const QString& rUrl) {
         if (rUrl == "parser") {
-
             QJsonParseError parseerror;
             QList<QVariant> mapofentries;
             QJsonDocument   doc = QJsonDocument::fromJson(answer.toUtf8(), &parseerror);
