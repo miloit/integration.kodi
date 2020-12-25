@@ -1220,11 +1220,8 @@ void Kodi::postRequest(const QString& url, const QString& method, const QString&
 
 
 void Kodi::onPollingTimerTimeout() {
-
     getTVEPGfromTVHeadend();
     getCurrentPlayer();
-
-
 }
 
 void Kodi::onProgressBarTimerTimeout() {
