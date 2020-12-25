@@ -596,7 +596,6 @@ void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
                     }
                 }
             }
-
         }
         context_getKodiChannelNumberToTVHeadendUUIDMapping->deleteLater();
     });
@@ -604,7 +603,6 @@ void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
     getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +
                                  "/api/channel/list", "parser", m_TvheadendClientUser,
                                  m_TvheadendClientPassword);
-
 }
 
 void Kodi::getKodiAvailableTVChannelList() {
@@ -758,7 +756,7 @@ void Kodi::getCurrentPlayer() {
                             }
                         }
                     } else if (map.value("result").toMap().value("item").toMap().value("type") == "unknown") {
-                        if ( map.value("result").toMap().value("item").toMap().value("title").toString() == m_KodiCurrentPlayerTitle) {
+                        if (map.value("result").toMap().value("item").toMap().value("title").toString() == m_KodiCurrentPlayerTitle) {
                             m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
                         } else {
                             QString jsonstring;
