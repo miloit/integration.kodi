@@ -692,7 +692,7 @@ void Kodi::getCurrentPlayer() {
     QString method = "Player.GetActivePlayers";
     QString thumbnail = "";
 
-    QObject::connect(this, &Kodi::requestReady, context, [=](const QVariantMap& map, const QString& rMethod) {
+    QObject::connect(this, &Kodi::requestReadyz, context, [=](const QVariantMap& map, const QString& rMethod) {
         EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
         if (rMethod == "Player.GetActivePlayers") {
             if (entity) {
@@ -706,22 +706,6 @@ void Kodi::getCurrentPlayer() {
                         }
                         m_currentkodiplayertype = map.value("result").toList().value(0).
                                 toMap().value("type").toString();
-                        if (m_currentkodiplayertype == "video") {
-                            jsonstring = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.GetItem\","
-                                         "\"params\":{ \"properties\": [\"title\", \"album\", \"artist\","
-                                         " \"season\", \"episode\", \"duration\", \"showtitle\", \"tvshowid\","
-                                         " \"thumbnail\", \"file\", \"fanart\", \"streamdetails\"],"
-                                         " \"playerid\": " + QString::number(m_currentkodiplayerid) + " },"
-                                                                                                      " \"id\": "+QString::number(m_globalKodiRequestID)+"}";
-                        } else if (m_currentkodiplayertype == "audio") {
-                            jsonstring = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.GetItem\","
-                                         "\"params\":{ \"properties\": [\"title\", \"album\", \"artist\", "
-                                         "\"season\", \"episode\", \"duration\", \"showtitle\", \"tvshowid\", "
-                                         "\"thumbnail\", \"file\", \"fanart\", \"streamdetails\"], "
-                                         "\"playerid\": " + QString::number(m_currentkodiplayerid) + " }, ""\"id\": "
-                                                                                                     ""+QString::number(m_globalKodiRequestID)+"}";
-                        }
-                        // postRequest(m_KodiClientUrl +":" + m_KodiClientPort +"/jsonrpc", "Player.GetItem", jsonstring);
                     }
                 }
             }
@@ -730,7 +714,7 @@ void Kodi::getCurrentPlayer() {
                 if (map.value("result").toMap().value("item").toMap().contains("type")) {
                     if (map.value("result").toMap().value("item").toMap().value("type") == "channel") {
                         if (map.value("result").toMap().value("item").toMap().value("title").toString() == m_KodiCurrentPlayerTitle) {
-                            m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
+                            // m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
                         } else {
                             QVariant fanart = map.value("result").toMap().value("item").toMap().value("fanart");
                             QVariant id = map.value("result").toMap().value("item").toMap().value("id");
@@ -756,7 +740,7 @@ void Kodi::getCurrentPlayer() {
                         }
                     } else if (map.value("result").toMap().value("item").toMap().value("type") == "unknown") {
                         if (map.value("result").toMap().value("item").toMap().value("title").toString() == m_KodiCurrentPlayerTitle) {
-                            m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
+                            // m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
                         } else {
                             QString jsonstring;
                             QVariant fanart = "";
@@ -801,7 +785,10 @@ void Kodi::getCurrentPlayer() {
             }
         } else if (rMethod == "Player.GetProperties") {
             if (map.contains("result")) {
-                m_KodiGetCurrentPlayerState = m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetItem;
+                m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
+
+
+
                 if (map.value("result").toMap().contains("totaltime")) {
                     int hours = map.value("result").toMap().value("totaltime").toMap().value("hours").toInt();
                     int milliseconds = map.value("result").toMap().value("totaltime").toMap().
@@ -829,7 +816,7 @@ void Kodi::getCurrentPlayer() {
                     }
                 }
             } else {
-                m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetItem;
+                // m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
             }
         }
         context->deleteLater();
@@ -847,6 +834,7 @@ void Kodi::getCurrentPlayer() {
                              " \"streamdetails\"], \"playerid\": "
                              "" + QString::number(m_currentkodiplayerid) + " }, "
                                                                            "\"id\": "+QString::number(m_globalKodiRequestID)+"}";
+                postRequest(m_KodiClientUrl +":" + m_KodiClientPort +"/jsonrpc", "Player.GetItem", jsonstring);
             } else if (m_currentkodiplayertype == "audio") {
                 jsonstring = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.GetItem\",\"params\":"
                              "{ \"properties\": [\"title\", \"album\", \"artist\", \"season\", "
@@ -854,8 +842,8 @@ void Kodi::getCurrentPlayer() {
                              "\"file\", \"fanart\", \"streamdetails\"], \"playerid\": "
                              "" + QString::number(m_currentkodiplayerid) + " }, \"id\": "
                                                                            ""+QString::number(m_globalKodiRequestID)+"}";
+                postRequest(m_KodiClientUrl +":" + m_KodiClientPort +"/jsonrpc", "Player.GetItem", jsonstring);
             }
-            postRequest(m_KodiClientUrl +":" + m_KodiClientPort +"/jsonrpc", "Player.GetItem", jsonstring);
         } else if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::GetProperties) {
             QString jsonstring = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.GetProperties\", "
                                  "\"params\": { \"playerid\":" +QString::number(m_currentkodiplayerid) +", "
@@ -867,6 +855,8 @@ void Kodi::getCurrentPlayer() {
                                  "\"params\": { \"path\": \"" +m_KodiCurrentPlayerThumbnail+"\" }, "
                                                                                             "\"id\": "+QString::number(m_globalKodiRequestID)+"}";
             postRequest(m_KodiClientUrl +":" + m_KodiClientPort +"/jsonrpc", "Files.PrepareDownload", jsonstring);
+        } else {
+            int i = 1;
         }
     }
 }
@@ -1142,7 +1132,12 @@ void Kodi::postRequest(const QString& url, const QString& method, const int& req
             }
             // createa a map object
             map = doc.toVariant().toMap();
-            emit requestReady(map, method);
+            if (method == "Player.GetActivePlayers" || method == "Player.GetItem" || method == "Player.GetProperties" || method == "Files.PrepareDownload") {
+                emit requestReadyz(map, method);
+
+            } else {
+                emit requestReady(map, method);
+            }
         }
         reply->deleteLater();
         context->deleteLater();
@@ -1193,6 +1188,8 @@ void Kodi::postRequest(const QString& url, const QString& method, const QString&
             map = doc.toVariant().toMap();
             if (method == "tvprogramm") {
                 emit requestReadyParser(doc, method);
+            } else if (method == "Player.GetActivePlayers" || method == "Player.GetItem" || method == "Player.GetProperties" || method == "Files.PrepareDownload") {
+                emit requestReadyz(map, method);
             } else {
                 emit requestReady(map, method);
             }

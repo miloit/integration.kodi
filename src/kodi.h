@@ -91,7 +91,9 @@ public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
 signals:
     void requestReady(const QVariantMap& obj, const QString& url);
     void requestReadyt(const QVariantMap& obj, const QString& url);
+    void requestReadyz(const QVariantMap& obj, const QString& url);
     void requestReadyParser(const QJsonDocument& doc, const QString& url);
+    void requestReadyParserz(const QJsonDocument& doc, const QString& url);
     void requestReadyQstring(const QString& qstring, const QString& url);
     void closed();
 
@@ -129,6 +131,7 @@ private:
     QString m_TvheadendClientPort;
     QList<QVariant> m_KodiTVChannelList;
     KodiGetCurrentPlayerState m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
+    KodiGetCurrentPlayerState m_KodiNextPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
     QString m_KodiCurrentPlayerThumbnail = "";
     QString m_KodiCurrentPlayerTitle = "";
     int m_globalKodiRequestID = 12345;
