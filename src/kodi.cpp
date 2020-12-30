@@ -107,7 +107,7 @@ void Kodi::connect() {
                      static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
                      [this](int exitCode, QProcess::ExitStatus exitStatus) {
         if (exitCode == 0 && exitStatus == QProcess::ExitStatus::NormalExit) {
-            // m_flagKodiOnline = true;
+            m_flagKodiOnline = true;
             m_pollingTimer->setInterval(2000);
             QObject::connect(m_pollingTimer, &QTimer::timeout, this, &Kodi::onPollingTimerTimeout);
 
@@ -119,15 +119,15 @@ void Kodi::connect() {
 
             m_tcpSocketKodiEventServer->connectToHost(m_KodiClientUrl, 9090);
             if (m_tcpSocketKodiEventServer->waitForConnected()) {
-                // m_flagKodiEventServer = true;
+                m_flagKodiEventServer = true;
             } else {
-                // m_flagKodiEventServer = true;
+                m_flagKodiEventServer = false;
             }
             m_pollingTimer->start();
             getKodiAvailableTVChannelList();
             setState(CONNECTED);
         } else {
-            // m_flagKodiOnline = false;
+            m_flagKodiOnline = false;
             m_notifications->add(
                         true, tr("Cannot connect to ").append(friendlyName()).append("."), tr("Reconnect"),
                         [](QObject* param) {
@@ -248,7 +248,7 @@ void Kodi::getTVEPGfromTVHeadend() {
                     (m_tvProgrammExpireTimeInHours * 3600);
         }
         context_getTVEPGfromTVHeadend->deleteLater();
-        // QObject::disconnect(this, &Kodi::requestReadyQstring, context_getTVEPGfromTVHeadend, 0);
+        QObject::disconnect(this, &Kodi::requestReadygetTVEPGfromTVHeadend, context_getTVEPGfromTVHeadend, 0);
     });
     int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
     if (m_flagTVHeadendOnline && temp_Timestamp <= 0) {
@@ -324,7 +324,7 @@ void Kodi::getSingleTVChannelList(QString param) {
                 }
             }
             context_getSingleTVChannelList->deleteLater();
-            // QObject::disconnect(this, &Kodi::requestReadygetSingleTVChannelList, context_getSingleTVChannelList,0);
+            QObject::disconnect(this, &Kodi::requestReadygetSingleTVChannelList, context_getSingleTVChannelList,0);
         });
 
         getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +
@@ -390,7 +390,7 @@ void Kodi::getSingleTVChannelList(QString param) {
                 }
             }
             context_getSingleTVChannelList->deleteLater();
-            // QObject::disconnect(this, &Kodi::requestReadygetSingleTVChannelList, context_getSingleTVChannelList, 0);
+            QObject::disconnect(this, &Kodi::requestReadygetSingleTVChannelList, context_getSingleTVChannelList, 0);
         });
         qCDebug(m_logCategory) << "GET USERS PLAYLIST";
         QString jsonstring;
@@ -455,7 +455,7 @@ void Kodi::getSingleTVChannelList(QString param) {
                 }
             }
             context_getSingleTVChannelList->deleteLater();
-            // QObject::disconnect(this, &Kodi::requestReadygetSingleTVChannelList, context_getSingleTVChannelList, 0);
+            QObject::disconnect(this, &Kodi::requestReadygetSingleTVChannelList, context_getSingleTVChannelList, 0);
         });
         qCDebug(m_logCategory) << "GET USERS PLAYLIST";
         QString jsonstring;
@@ -961,19 +961,6 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
     }
 }
 
-/*void Kodi::updateEntity(const QString& entity_id, const QVariantMap& attr) {
-    EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(entity_id));
-    if (entity) {
-        // update the media player
-        entity->updateAttrByIndex(MediaPlayerDef::Attributes::STATE, attr.value("state").toInt());
-        entity->updateAttrByIndex(MediaPlayerDef::Attributes::SOURCE, attr.value("device").toString());
-        entity->updateAttrByIndex(MediaPlayerDef::Attributes::VOLUME, attr.value("volume").toInt());
-        entity->updateAttrByIndex(MediaPlayerDef::Attributes::MEDIATITLE, attr.value("title").toString());
-        entity->updateAttrByIndex(MediaPlayerDef::Attributes::MEDIAARTIST, attr.value("artist").toString());
-        entity->updateAttrByIndex(MediaPlayerDef::Attributes::MEDIAIMAGE, attr.value("image").toString());
-    }
-}
-*/
 void Kodi::postRequest(const QString& url, const QString& callFunction, const int& requestid) {
     // create new networkacces manager and request
     QNetworkAccessManager* manager = new QNetworkAccessManager(this);
@@ -1106,9 +1093,9 @@ void Kodi::onPollingTimerTimeout() {
                      static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
                      [this](int exitCode, QProcess::ExitStatus exitStatus) {
         if (exitCode == 0 && exitStatus == QProcess::ExitStatus::NormalExit) {
-            // m_flagKodiOnline = true;
+            m_flagKodiOnline = true;
         } else {
-            // m_flagKodiOnline = false;
+            m_flagKodiOnline = false;
             m_notifications->add(
                         true, tr("Cannot connect to ").append(friendlyName()).append("."), tr("Reconnect"),
                         [](QObject* param) {
@@ -1127,9 +1114,9 @@ void Kodi::onPollingTimerTimeout() {
                      static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
                      [this](int exitCode, QProcess::ExitStatus exitStatus) {
         if (exitCode == 0 && exitStatus == QProcess::ExitStatus::NormalExit) {
-            // m_flagTVHeadendOnline = true;
+            m_flagTVHeadendOnline = true;
         } else {
-            // m_flagTVHeadendOnline = false;
+            m_flagTVHeadendOnline = false;
             qCDebug(m_logCategory) << "TV Headend not reachable";
         }
         QObject::disconnect(&m_checkProcessTVHeadendAvailability,
