@@ -32,7 +32,8 @@
 #include <QAuthenticator>
 #include <QTimer>
 #include <QObject>
-
+#include <QProcess>
+#include <QTcpSocket>
 
 #include "yio-interface/entities/mediaplayerinterface.h"
 #include "yio-model/mediaplayer/tvchannelmodel_mediaplayer.h"
@@ -51,11 +52,11 @@ class KodiPlugin : public Plugin {
     Q_INTERFACES(PluginInterface)
     Q_PLUGIN_METADATA(IID "YIO.PluginInterface" FILE "kodi.json")
 
-public:
+ public:
     KodiPlugin();
 
     // Plugin interface
-protected:
+ protected:
     Integration* createIntegration(const QVariantMap& config, EntitiesInterface* entities,
                                    NotificationsInterface* notifications, YioAPIInterface* api,
                                    ConfigInterface* configObj) override;
@@ -68,7 +69,7 @@ protected:
 class Kodi : public Integration {
     Q_OBJECT
 
-public:
+ public:
     explicit Kodi(const QVariantMap& config, EntitiesInterface* entities, NotificationsInterface* notifications,
                   YioAPIInterface* api, ConfigInterface* configObj, Plugin* plugin);
 
@@ -76,7 +77,7 @@ public:
     enum KodiGetCurrentPlayerState { GetActivePlayers, GetItem, PrepareDownload, Stopped, GetProperties, NotActive };
     Q_ENUM(KodiGetCurrentPlayerState);
 
-public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
+ public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
     void connect() override;
     void disconnect() override;
     void enterStandby() override;
@@ -88,23 +89,40 @@ public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
               const QVariantList &args, std::function<void(QVariant)> callback = NULL);
 
 
-signals:
-    void requestReady(const QVariantMap& obj, const QString& url);
-    void requestReadyt(const QVariantMap& obj, const QString& url);
-    void requestReadyz(const QVariantMap& obj, const QString& url);
-    void requestReadyParser(const QJsonDocument& doc, const QString& url);
-    void requestReadyParserz(const QJsonDocument& doc, const QString& url);
-    void requestReadyQstring(const QString& qstring, const QString& url);
-    void closed();
+ signals:
+    // void requestReady(const QVariantMap& obj, const QString& url);
+    void requestReadygetKodiAvailableTVChannelList(const QVariantMap& object, const QString& method);
+    void requestReadygetKodiChannelNumberToTVHeadendUUIDMapping(const QString& repliedString,
+                                                                const QString& requestFunction);
+    void requestReadygetTVEPGfromTVHeadend(const QString& repliedString, const QString& requestFunction);
+    void requestReadygetSingleTVChannelList(const QString& repliedString, const QString& requestFunction);
+    void requestReadygetCompleteTVChannelList(const QVariantMap& obj, const QString& requestFunction);
+    // void requestReadyt(const QVariantMap& obj, const QString& url);
+    void requestReadygetCurrentPlayer(const QVariantMap& obj, const QString& url);
+    void requestReadyCommandPlay(const QVariantMap& obj, const QString& url);
+    void requestReadyCommandPause(const QVariantMap& obj, const QString& url);
+    void requestReadyCommandNext(const QVariantMap& obj, const QString& url);
+    void requestReadyCommandPrevious(const QVariantMap& obj, const QString& url);
 
-private slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
+
+
+    // void requestReadyoiu(const QVariantMap& obj, const QString& url);
+    // void requestReadyParser(const QJsonDocument& doc, const QString& url);
+    // v/oid requestReadyParserz(const QJsonDocument& doc, const QString& url);
+
+    // void requestReadyQstring(const QString& qstring, const QString& url);
+    // void closed();
+
+ private slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
     void onPollingTimerTimeout();
     void onProgressBarTimerTimeout();
-    void processMessage(QString message);
+    // void processMessage(QString message);
     void onPollingTimer();
     void onNetWorkAccessible(QNetworkAccessManager::NetworkAccessibility accessibility);
+    void readTcpData();
+    void disconnectTCPSocket();
 
-private:
+ private:
     bool m_flagTVHeadendConfigured = false;
     bool m_flagKodiConfigured = false;
     int m_currentkodiplayerid = -1;
@@ -112,7 +130,7 @@ private:
     QString m_currentkodiplayertype = "unknown";
     bool    m_startup = true;
     QString m_entityId;
-
+    bool m_flage = false;
 
     // polling tiQQueue m_sendQueue;mer
     QTimer* m_pollingTimer;
@@ -138,25 +156,37 @@ private:
     int m_tvProgrammExpireTimeInHours = 2;
     int m_EPGExpirationTimestamp = 0;
     QList<QVariant> m_currentEPG;
+    bool m_flag = false;
+    QProcess                    m_checkProcessKodiAvailability;
+    QProcess m_checkProcessTVHeadendAvailability;
+    bool m_flagKodiOnline = false;
+    bool m_flagTVHeadendOnline = false;
+    QString m_completeKodiJSONRPCUrl = "";
+    QString m_completeTVheadendJSONUrl = "";
+    QTcpSocket* m_tcpSocketKodiEventServer;
+    bool m_flagKodiEventServer;
 
 
     // Kodi API calls
-    void search(QString query);
+    /*void search(QString query);
     void search(QString query, QString type);
     void search(QString query, QString type, QString limit, QString offset);
-    void getAlbum(QString id);
+    void getAlbum(QString id);*/
     void getSingleTVChannelList(QString id);
     void getCompleteTVChannelList();
     // Kodi Connect API calls
     void getCurrentPlayer();
     void getKodiAvailableTVChannelList();
     void getKodiChannelNumberToTVHeadendUUIDMapping();
-    void updateEntity(const QString& entity_id, const QVariantMap& attr);
+    // void updateEntity(const QString& entity_id, const QVariantMap& attr);
     void getTVEPGfromTVHeadend();
     void getTVChannelLogos();
+
     // get and post requests
     void getRequestWithAuthentication(const QString& url, const QString& method,
                                       const QString& user, const QString& password);
+
     void postRequest(const QString& url, const QString& params, const int& id);
-    void postRequest(const QString& url, const QString& method, const QString& jsonstring);
+    void postRequest(const QString& url, const QString& function, const QString& jsonstring);
+    // void postRequestthumb(const QString& url, const QString& method, const QString& jsonstring);
 };
