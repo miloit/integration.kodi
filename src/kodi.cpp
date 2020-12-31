@@ -1,6 +1,8 @@
-﻿/******************************************************************************
+/******************************************************************************
  *
  * Copyright (C) 2020 Michael Löcher <MichaelLoercher@web.de>
+ * 
+ * 
  *
  * This file is part of the YIO-Remote software project.
  *
@@ -19,6 +21,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
+
 #include "kodi.h"
 
 #include <QJsonArray>
@@ -177,7 +180,17 @@ void Kodi::connect() {
         m_flagKodiConfigured = false;
     }
 }
-
+void Kodi::clearMediaPlayerEntity() {
+    EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
+    entity->updateAttrByIndex(MediaPlayerDef::MEDIATYPE, "");
+    // get the track title
+    entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, "");
+    // get the artist
+    entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, "");
+    entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, "");
+    entity->updateAttrByIndex(MediaPlayerDef::MEDIAIMAGE, "");
+    entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::States::IDLE);
+}
 void Kodi::disconnectTCPSocket() {
 }
 void Kodi::readTcpData() {
@@ -210,15 +223,7 @@ void Kodi::disconnect() {
     QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(connectionClosed()), 0, 0);
 */
 
-    EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
-    entity->updateAttrByIndex(MediaPlayerDef::MEDIATYPE, "");
-    // get the track title
-    entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, "");
-    // get the artist
-    entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, "");
-    entity->updateAttrByIndex(MediaPlayerDef::MEDIAIMAGE, "");
-    entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::States::OFF);
-    entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::States::IDLE);
+    clearMediaPlayerEntity();
     setState(DISCONNECTED);
 }
 
@@ -324,7 +329,7 @@ void Kodi::getSingleTVChannelList(QString param) {
                 }
             }
             context_getSingleTVChannelList->deleteLater();
-            QObject::disconnect(this, &Kodi::requestReadygetSingleTVChannelList, context_getSingleTVChannelList,0);
+            QObject::disconnect(this, &Kodi::requestReadygetSingleTVChannelList, context_getSingleTVChannelList, 0);
         });
 
         getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +
@@ -883,12 +888,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
                         m_currentkodiplayertype ="unknown";
                         m_currentkodiplayerid = -1;
                         m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::Stopped;
-                        entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::IDLE);
-                        entity->updateAttrByIndex(MediaPlayerDef::MEDIAIMAGE, "");
-                        // get the track title
-                        entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, "");
-                        // get the artist
-                        entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, "");
+                        clearMediaPlayerEntity();
                         getCurrentPlayer();
                     }
                 }

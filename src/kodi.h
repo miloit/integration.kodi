@@ -181,6 +181,7 @@ class Kodi : public Integration {
     // void updateEntity(const QString& entity_id, const QVariantMap& attr);
     void getTVEPGfromTVHeadend();
     void getTVChannelLogos();
+    void clearMediaPlayerEntity();
 
     // get and post requests
     void getRequestWithAuthentication(const QString& url, const QString& method,
