@@ -117,11 +117,11 @@ void Kodi::connect() {
             m_progressBarTimer->setInterval(1000);
             QObject::connect(m_progressBarTimer, &QTimer::timeout, this, &Kodi::onProgressBarTimerTimeout);
             m_tcpSocketKodiEventServer = new QTcpSocket(this);
-            QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(readyRead()), SLOT(readTcpData()) );
-            // QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(connectionClosed()), SLOT(disconnectTCPSocket()) );
 
             m_tcpSocketKodiEventServer->connectToHost(m_KodiClientUrl, 9090);
             if (m_tcpSocketKodiEventServer->waitForConnected()) {
+                QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(readyRead()), SLOT(readTcpData()) );
+                QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(aboutToClose()), SLOT(disconnectTCPSocket()) );
                 m_flagKodiEventServer = true;
             } else {
                 m_flagKodiEventServer = false;
@@ -192,6 +192,7 @@ void Kodi::clearMediaPlayerEntity() {
     entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::States::IDLE);
 }
 void Kodi::disconnectTCPSocket() {
+    int i = 9;
 }
 void Kodi::readTcpData() {
     QString reply = m_tcpSocketKodiEventServer->readAll();
@@ -216,12 +217,27 @@ void Kodi::readTcpData() {
 void Kodi::disconnect() {
     m_pollingTimer->stop();
     m_progressBarTimer->stop();
-    /*QObject::disconnect(m_pollingTimer, &QTimer::timeout, this, &Kodi::onPollingTimerTimeout);
+    QObject::disconnect(m_pollingTimer, &QTimer::timeout, this, &Kodi::onPollingTimerTimeout);
     QObject::disconnect(m_progressBarTimer, &QTimer::timeout, this, &Kodi::onProgressBarTimerTimeout);
     QObject::disconnect(this, &Kodi::requestReadygetCurrentPlayer, 0, 0);
-    /*QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(readyRead()), 0, 0);
-    QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(connectionClosed()), 0, 0);
-*/
+
+    if (m_tcpSocketKodiEventServer->isOpen()) {
+        m_tcpSocketKodiEventServer->close();
+
+        QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(readyRead()), 0, 0);
+        QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(aboutToClose()), 0, 0);
+    }
+
+    QObject::disconnect(&m_checkProcessTVHeadendAvailability,
+                        static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), 0, 0);
+    QObject::disconnect(&m_checkProcessKodiAvailability,
+                        static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), 0, 0);
+    if (m_checkProcessKodiAvailability.Running) {
+        m_checkProcessKodiAvailability.close();
+    }
+    if (m_checkProcessTVHeadendAvailability.Running) {
+        m_checkProcessTVHeadendAvailability.close();
+    }
 
     clearMediaPlayerEntity();
     setState(DISCONNECTED);
@@ -524,7 +540,7 @@ void Kodi::getKodiAvailableTVChannelList() {
                         if (m_mapKodiChannelNumberToTVHeadendUUID.isEmpty())  {
                             getKodiChannelNumberToTVHeadendUUIDMapping();
                         } else {
-                            qCDebug(m_logCategory) << "TV Headend not reachable";
+                            qCDebug(m_logCategory) << "m_mapKodiChannelNumberToTVHeadendUUID already loaded";
                         }
                     } else {
                         qCDebug(m_logCategory) << "TV Headend not configured";
@@ -1133,7 +1149,7 @@ void Kodi::onPollingTimerTimeout() {
         getCurrentPlayer();
     }
     int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
-    if (m_flagTVHeadendOnline && m_flagTVHeadendOnline && temp_Timestamp <= 0) {
+    if (m_flagTVHeadendOnline && temp_Timestamp <= 0) {
         getTVEPGfromTVHeadend();
         if (m_checkProcessTVHeadendAvailability.Running) {
             m_checkProcessTVHeadendAvailability.start("curl", QStringList() << "-s" << m_completeTVheadendJSONUrl);
