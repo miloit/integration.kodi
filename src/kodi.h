@@ -164,7 +164,6 @@ class Kodi : public Integration {
     QString m_completeKodiJSONRPCUrl = "";
     QString m_completeTVheadendJSONUrl = "";
     QTcpSocket* m_tcpSocketKodiEventServer;
-    //bool m_flagKodiEventServer;
     bool m_flagKodiEventServerOnline = false;
 
     // Kodi API calls

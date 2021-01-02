@@ -123,7 +123,7 @@ void Kodi::connect() {
                 QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(readyRead()), SLOT(readTcpData()) );
                 QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(stateChanged()), SLOT(checkTCPSocket()) );
                 m_flagKodiEventServerOnline = true;
-           } else {
+            } else {
                 m_flagKodiEventServerOnline = false;
             }
             m_pollingTimer->start();
@@ -163,7 +163,6 @@ void Kodi::connect() {
 
 
     qCDebug(m_logCategory) << "STARTING Kodi";
-
     if (m_TvheadendClientUrl != "" && m_TvheadendClientPort != "") {
         m_flagTVHeadendConfigured = true;
         m_completeTVheadendJSONUrl = m_TvheadendClientUrl + ":" + m_TvheadendClientPort;
@@ -225,8 +224,6 @@ void Kodi::disconnect() {
     QObject::disconnect(m_progressBarTimer, &QTimer::timeout, this, &Kodi::onProgressBarTimerTimeout);
     QObject::disconnect(this, &Kodi::requestReadygetCurrentPlayer, 0, 0);
 
-    //if (m_tcpSocketKodiEventServer->state() == QTcpSocket::ConnectedState){
-    //if (m_tcpSocketKodiEventServer->isOpen()) {
     if (m_flagKodiEventServerOnline) {
         m_tcpSocketKodiEventServer->close();
 
@@ -974,11 +971,12 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
         } else {
             getSingleTVChannelList(param.toString());
         }
-    } /*else if (command == MediaPlayerDef::C_GETPLAYLIST) {
+    }
+    /*else if (command == MediaPlayerDef::C_GETPLAYLIST) {
         if (param == "user") {
-            //getCompleteTVChannelList();
+            // getCompleteTVChannelList();
         } else {
-            //getSingleTVChannelList(param.toString());
+            // getSingleTVChannelList(param.toString());
         }
     }*/
 }
