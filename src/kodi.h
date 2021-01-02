@@ -120,7 +120,7 @@ class Kodi : public Integration {
     void onPollingTimer();
     void onNetWorkAccessible(QNetworkAccessManager::NetworkAccessibility accessibility);
     void readTcpData();
-    void disconnectTCPSocket();
+    void checkTCPSocket();
 
  private:
     bool m_flagTVHeadendConfigured = false;
@@ -164,8 +164,8 @@ class Kodi : public Integration {
     QString m_completeKodiJSONRPCUrl = "";
     QString m_completeTVheadendJSONUrl = "";
     QTcpSocket* m_tcpSocketKodiEventServer;
-    bool m_flagKodiEventServer;
-
+    //bool m_flagKodiEventServer;
+    bool m_flagKodiEventServerOnline = false;
 
     // Kodi API calls
     /*void search(QString query);

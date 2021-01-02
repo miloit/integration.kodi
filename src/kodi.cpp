@@ -1,8 +1,8 @@
 /******************************************************************************
  *
  * Copyright (C) 2020 Michael Löcher <MichaelLoercher@web.de>
- * 
- * 
+ *
+ *
  *
  * This file is part of the YIO-Remote software project.
  *
@@ -121,10 +121,10 @@ void Kodi::connect() {
             m_tcpSocketKodiEventServer->connectToHost(m_KodiClientUrl, 9090);
             if (m_tcpSocketKodiEventServer->waitForConnected()) {
                 QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(readyRead()), SLOT(readTcpData()) );
-                QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(aboutToClose()), SLOT(disconnectTCPSocket()) );
-                m_flagKodiEventServer = true;
-            } else {
-                m_flagKodiEventServer = false;
+                QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(stateChanged()), SLOT(checkTCPSocket()) );
+                m_flagKodiEventServerOnline = true;
+           } else {
+                m_flagKodiEventServerOnline = false;
             }
             m_pollingTimer->start();
             getKodiAvailableTVChannelList();
@@ -191,8 +191,12 @@ void Kodi::clearMediaPlayerEntity() {
     entity->updateAttrByIndex(MediaPlayerDef::MEDIAIMAGE, "");
     entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::States::IDLE);
 }
-void Kodi::disconnectTCPSocket() {
-    int i = 9;
+void Kodi::checkTCPSocket() {
+    if (m_tcpSocketKodiEventServer->state() == QTcpSocket::ConnectedState) {
+        m_flagKodiEventServerOnline = true;
+    } else {
+        m_flagKodiEventServerOnline = false;
+    }
 }
 void Kodi::readTcpData() {
     QString reply = m_tcpSocketKodiEventServer->readAll();
@@ -221,11 +225,13 @@ void Kodi::disconnect() {
     QObject::disconnect(m_progressBarTimer, &QTimer::timeout, this, &Kodi::onProgressBarTimerTimeout);
     QObject::disconnect(this, &Kodi::requestReadygetCurrentPlayer, 0, 0);
 
-    if (m_tcpSocketKodiEventServer->isOpen()) {
+    //if (m_tcpSocketKodiEventServer->state() == QTcpSocket::ConnectedState){
+    //if (m_tcpSocketKodiEventServer->isOpen()) {
+    if (m_flagKodiEventServerOnline) {
         m_tcpSocketKodiEventServer->close();
 
         QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(readyRead()), 0, 0);
-        QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(aboutToClose()), 0, 0);
+        QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(stateChanged()), 0, 0);
     }
 
     QObject::disconnect(&m_checkProcessTVHeadendAvailability,
@@ -315,7 +321,7 @@ void Kodi::getSingleTVChannelList(QString param) {
                 QString id = m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("channelid").toString();
                 QString title = m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("label").toString();
                 QString subtitle = "";
-                QString type = "playlist";
+                QString type = "tvchannellist";
                 QString time = "";
                 QString image = QString::fromStdString(
                             QByteArray::fromPercentEncoding(
@@ -326,22 +332,22 @@ void Kodi::getSingleTVChannelList(QString param) {
                 }
                 QStringList commands = {"PLAY"};
 
-                BrowsetvchannelModel* album = new BrowsetvchannelModel(nullptr, id, time, title, subtitle,
-                                                                       type, image, commands);
+                BrowsetvchannelModel* tvchannel = new BrowsetvchannelModel(nullptr, id, time, title, subtitle,
+                                                                           type, image, commands);
 
                 for (auto key : currenttvprogramm.keys()) {
                     QDateTime timestamp;
                     timestamp.setTime_t(key.toUInt());
 
-                    album->addtvchannelItem(m_KodiTVChannelList[currenttvchannelarrayid].toMap().
-                                            value("channelid").toString(), timestamp.toString("hh:mm"),
-                                            currenttvprogramm.value(key), "", "tvchannel", "", commands);
+                    tvchannel->addtvchannelItem(m_KodiTVChannelList[currenttvchannelarrayid].toMap().
+                                                value("channelid").toString(), timestamp.toString("hh:mm"),
+                                                currenttvprogramm.value(key), "", "tvchannel", "", commands);
                 }
 
 
                 if (entity) {
                     MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
-                    me->setBrowseModel(album);
+                    me->setBrowseModel(tvchannel);
                 }
             }
             context_getSingleTVChannelList->deleteLater();
@@ -874,7 +880,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
     EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
     if (command == MediaPlayerDef::C_PLAY) {
     } else if (command == MediaPlayerDef::C_PLAY_ITEM) {
-        if (param.toMap().value("type") == "playlist" || param.toMap().value("type") == "track") {
+        if (param.toMap().value("type") == "tvchannellist" || param.toMap().value("type") == "track") {
             QObject::connect(this, &Kodi::requestReadyCommandPlay, contextsendCommand,
                              [=](const QVariantMap& map, const QString& rUrl) {
                 if (rUrl == "sendCommand") {
@@ -968,13 +974,13 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
         } else {
             getSingleTVChannelList(param.toString());
         }
-    } else if (command == MediaPlayerDef::C_GETPLAYLIST) {
+    } /*else if (command == MediaPlayerDef::C_GETPLAYLIST) {
         if (param == "user") {
-            getCompleteTVChannelList();
+            //getCompleteTVChannelList();
         } else {
-            getSingleTVChannelList(param.toString());
+            //getSingleTVChannelList(param.toString());
         }
-    }
+    }*/
 }
 
 void Kodi::postRequest(const QString& url, const QString& callFunction, const int& requestid) {
