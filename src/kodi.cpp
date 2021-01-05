@@ -106,10 +106,18 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
 }
 
 void Kodi::connect() {
-    QObject::connect(&m_checkProcessKodiAvailability,
+    QNetworkAccessManager* networkManagerTvHeadend = new QNetworkAccessManager(this);
+    QNetworkRequest requestKodi;
+    QNetworkRequest requestTVHeadend;
+    QNetworkAccessManager* networkManagerKodi = new QNetworkAccessManager(this);
+
+    /*QObject::connect(&m_checkProcessKodiAvailability,
                      static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
                      [this](int exitCode, QProcess::ExitStatus exitStatus) {
-        if (exitCode == 0 && exitStatus == QProcess::ExitStatus::NormalExit) {
+        if (exitCode == 0 && exitStatus == QProcess::ExitStatus::NormalExit) {*/
+    QObject::connect(networkManagerKodi, &QNetworkAccessManager::finished, this, [=](QNetworkReply* reply) {
+        QString     answer = reply->readAll();
+        if (!reply->error() && answer.contains("pong")) {
             m_flagKodiOnline = true;
             m_pollingTimer->setInterval(2000);
             QObject::connect(m_pollingTimer, &QTimer::timeout, this, &Kodi::onPollingTimerTimeout);
@@ -141,22 +149,26 @@ void Kodi::connect() {
             disconnect();
             qCDebug(m_logCategory) << "Kodi not reachable";
         }
-        QObject::disconnect(&m_checkProcessKodiAvailability,
-                            static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), 0, 0);
+        // QObject::disconnect(&m_checkProcessKodiAvailability,
+        //                  static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), 0, 0);
+        QObject::disconnect(networkManagerKodi, &QNetworkAccessManager::finished, this, 0);
     });
 
-    QObject::connect(&m_checkProcessTVHeadendAvailability,
+    /*QObject::connect(&m_checkProcessTVHeadendAvailability,
                      static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
                      [this](int exitCode, QProcess::ExitStatus exitStatus) {
-        if (exitCode == 0 && exitStatus == QProcess::ExitStatus::NormalExit) {
+        if (exitCode == 0 && exitStatus == QProcess::ExitStatus::NormalExit) {*/
+    QObject::connect(networkManagerTvHeadend, &QNetworkAccessManager::finished, this, [=](QNetworkReply* reply) {
+        if (!reply->error()) {
             m_flagTVHeadendOnline = true;
             getTVEPGfromTVHeadend();
         } else {
             m_flagTVHeadendOnline = false;
             qCDebug(m_logCategory) << "TV Headend not reachable";
         }
-        QObject::disconnect(&m_checkProcessTVHeadendAvailability,
-                            static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), 0, 0);
+        /*QObject::disconnect(&m_checkProcessTVHeadendAvailability,
+                            static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), 0, 0);*/
+        QObject::disconnect(networkManagerTvHeadend, &QNetworkAccessManager::finished, this, 0);
     });
 
     setState(CONNECTING);
@@ -166,14 +178,39 @@ void Kodi::connect() {
     if (m_TvheadendClientUrl != "" && m_TvheadendClientPort != "") {
         m_flagTVHeadendConfigured = true;
         m_completeTVheadendJSONUrl = m_TvheadendClientUrl + ":" + m_TvheadendClientPort;
-        m_checkProcessTVHeadendAvailability.start("curl", QStringList() << "-s" << m_completeTVheadendJSONUrl);
+        // m_checkProcessTVHeadendAvailability.start("curl", QStringList() << "-s" << m_completeTVheadendJSONUrl);
+        QString concatenated = m_TvheadendClientUser+":"+m_TvheadendClientPassword;
+        QByteArray data = concatenated.toLocal8Bit().toBase64();
+        QString headerData = "Basic " + data;
+        requestTVHeadend.setRawHeader("Authorization", headerData.toLocal8Bit());
+        // set the URL
+        // url = "/v1/me/player"
+        // params = "?q=stringquery&limit=20"
+        requestTVHeadend.setUrl(QUrl(m_completeTVheadendJSONUrl));
+
+        requestTVHeadend.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        networkManagerTvHeadend->get(requestTVHeadend);
     } else {
         qCDebug(m_logCategory) << "TVHeadend not confgured";
         m_flagTVHeadendConfigured = false;
     }
     if (m_KodiClientUrl != "" && m_KodiClientPort != "" && m_completeKodiJSONRPCUrl != "") {
         m_flagKodiConfigured = true;
-        m_checkProcessKodiAvailability.start("curl", QStringList() << "-s" << m_completeKodiJSONRPCUrl);
+        // m_checkProcessKodiAvailability.start("curl", QStringList() << "-s" << m_completeKodiJSONRPCUrl);
+        /*m_KodiClientUrl +":" + m_KodiClientPort +"/jsonrpc", "getSingleTVChannelList",
+                            "{ \"jsonrpc\": \"2.0\", \"method\": \"JSONRPC.Ping\","
+                            " \"params\": {  }, \"id\": "+QString::number(m_globalKodiRequestID)+" }"*/
+        QByteArray paramutf8 = QString("{ \"jsonrpc\": \"2.0\", \"method\": \"JSONRPC.Ping\","
+                                       " \"params\": {  }, \"id\": "
+                                       +QString::number(m_globalKodiRequestID)+" }").toUtf8();
+        QUrl urlKodi = QUrl(m_completeKodiJSONRPCUrl);
+        requestKodi.setUrl(urlKodi);
+        requestKodi.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        requestKodi.setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(paramutf8.size()));
+
+        // send the get request
+        networkManagerKodi->post(requestKodi, paramutf8);
+
     } else {
         qCDebug(m_logCategory) << "Kodi not confgured";
         m_flagKodiConfigured = false;
@@ -329,8 +366,8 @@ void Kodi::getSingleTVChannelList(QString param) {
                 }
                 QStringList commands = {"PLAY"};
 
-                BrowsetvchannelModel* tvchannel = new BrowsetvchannelModel(nullptr, id, time, title, subtitle,
-                                                                           type, image, commands);
+                BrowseTvChannelModel* tvchannel = new BrowseTvChannelModel(id, time, title, subtitle,
+                                                                           type, image, commands, nullptr);
 
                 for (auto key : currenttvprogramm.keys()) {
                     QDateTime timestamp;
@@ -397,9 +434,9 @@ void Kodi::getSingleTVChannelList(QString param) {
                             }
                             QStringList commands = {};
 
-                            BrowsetvchannelModel* tvchannel = new BrowsetvchannelModel(nullptr, id, "",
+                            BrowseTvChannelModel* tvchannel = new BrowseTvChannelModel(id, "",
                                                                                        title, subtitle, type, image,
-                                                                                       commands);
+                                                                                       commands, nullptr);
                             tvchannel->addtvchannelItem(m_KodiTVChannelList[currenttvchannelarrayid].toMap().
                                                         value("channelid").toString(), "", "No programm available",
                                                         "", "tvchannel", "", commands);
@@ -464,8 +501,9 @@ void Kodi::getSingleTVChannelList(QString param) {
                             }
                             QStringList commands = {};
 
-                            BrowsetvchannelModel* tvchannel = new BrowsetvchannelModel(nullptr, id, "", title,
-                                                                                       subtitle, type, image, commands);
+                            BrowseTvChannelModel* tvchannel = new BrowseTvChannelModel(id, "", title,
+                                                                                       subtitle, type,
+                                                                                       image, commands, nullptr);
                             tvchannel->addtvchannelItem(m_KodiTVChannelList[currenttvchannelarrayid].toMap().
                                                         value("channelid").toString(), "", "No programm available",
                                                         "", "tvchannel", "", commands);
@@ -577,9 +615,9 @@ void Kodi::getCompleteTVChannelList() {
                 QString     unqueId = "";
                 QString     type = "tvchannellist";
                 QStringList commands = {};
-                BrowsetvchannelModel* tvchannel = new BrowsetvchannelModel(nullptr, channelId, "",
+                BrowseTvChannelModel* tvchannel = new BrowseTvChannelModel(channelId, "",
                                                                            label, unqueId, type, thumbnail,
-                                                                           commands);
+                                                                           commands, nullptr);
 
                 for (int i = 0; i < m_KodiTVChannelList.length(); i++) {
                     QString thumbnail = QString::fromStdString(
@@ -1109,10 +1147,18 @@ void Kodi::postRequest(const QString& url, const QString& callfunction, const QS
 
 
 void Kodi::onPollingTimerTimeout() {
-    QObject::connect(&m_checkProcessKodiAvailability,
+    QNetworkAccessManager* networkManagerTvHeadend = new QNetworkAccessManager(this);
+    QNetworkRequest requestKodi;
+    QNetworkRequest requestTVHeadend;
+    QNetworkAccessManager* networkManagerKodi = new QNetworkAccessManager(this);
+
+    /*QObject::connect(&m_checkProcessKodiAvailability,
                      static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
                      [this](int exitCode, QProcess::ExitStatus exitStatus) {
-        if (exitCode == 0 && exitStatus == QProcess::ExitStatus::NormalExit) {
+        if (exitCode == 0 && exitStatus == QProcess::ExitStatus::NormalExit) {*/
+    QObject::connect(networkManagerKodi, &QNetworkAccessManager::finished, this, [=](QNetworkReply* reply) {
+        QString     answer = reply->readAll();
+        if (!reply->error() && answer.contains("pong")) {
             m_flagKodiOnline = true;
         } else {
             m_flagKodiOnline = false;
@@ -1126,38 +1172,61 @@ void Kodi::onPollingTimerTimeout() {
             disconnect();
             qCDebug(m_logCategory) << "Kodi not reachable";
         }
-        QObject::disconnect(&m_checkProcessKodiAvailability,
-                            static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), 0, 0);
+        QObject::disconnect(networkManagerKodi, &QNetworkAccessManager::finished, this, 0);
     });
 
-    QObject::connect(&m_checkProcessTVHeadendAvailability,
+    /*QObject::connect(&m_checkProcessTVHeadendAvailability,
                      static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
                      [this](int exitCode, QProcess::ExitStatus exitStatus) {
-        if (exitCode == 0 && exitStatus == QProcess::ExitStatus::NormalExit) {
+        if (exitCode == 0 && exitStatus == QProcess::ExitStatus::NormalExit) {*/
+    QObject::connect(networkManagerTvHeadend, &QNetworkAccessManager::finished, this, [=](QNetworkReply* reply) {
+        if (!reply->error()) {
             m_flagTVHeadendOnline = true;
         } else {
             m_flagTVHeadendOnline = false;
             qCDebug(m_logCategory) << "TV Headend not reachable";
         }
-        QObject::disconnect(&m_checkProcessTVHeadendAvailability,
-                            static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), 0, 0);
+        /*QObject::disconnect(&m_checkProcessTVHeadendAvailability,
+                            static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), 0, 0);*/
+        QObject::disconnect(networkManagerTvHeadend, &QNetworkAccessManager::finished, this, 0);
     });
 
 
 
 
     if (m_flagKodiOnline) {
-        if (!m_checkProcessKodiAvailability.Running)  {
+        /*if (!m_checkProcessKodiAvailability.Running)  {
             m_checkProcessKodiAvailability.start("curl", QStringList() << "-s" << m_completeKodiJSONRPCUrl);
-        }
+        }*/
+        QByteArray paramutf8 = QString("{ \"jsonrpc\": \"2.0\", \"method\": \"JSONRPC.Ping\","
+                                       " \"params\": {  }, \"id\": "
+                                       +QString::number(m_globalKodiRequestID)+" }").toUtf8();
+        QUrl urlKodi = QUrl(m_completeKodiJSONRPCUrl);
+        requestKodi.setUrl(urlKodi);
+        requestKodi.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        requestKodi.setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(paramutf8.size()));
+
+        // send the get request
+        networkManagerKodi->post(requestKodi, paramutf8);
         getCurrentPlayer();
     }
     int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
     if (m_flagTVHeadendOnline && temp_Timestamp <= 0) {
         getTVEPGfromTVHeadend();
-        if (m_checkProcessTVHeadendAvailability.Running) {
+        /*if (m_checkProcessTVHeadendAvailability.Running) {
             m_checkProcessTVHeadendAvailability.start("curl", QStringList() << "-s" << m_completeTVheadendJSONUrl);
-        }
+        }*/
+        QString concatenated = m_TvheadendClientUser+":"+m_TvheadendClientPassword;
+        QByteArray data = concatenated.toLocal8Bit().toBase64();
+        QString headerData = "Basic " + data;
+        requestTVHeadend.setRawHeader("Authorization", headerData.toLocal8Bit());
+        // set the URL
+        // url = "/v1/me/player"
+        // params = "?q=stringquery&limit=20"
+        requestTVHeadend.setUrl(QUrl(m_completeTVheadendJSONUrl));
+
+        requestTVHeadend.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        networkManagerTvHeadend->get(requestTVHeadend);
     }
 }
 
