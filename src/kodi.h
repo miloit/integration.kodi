@@ -37,6 +37,7 @@
 
 #include "yio-interface/entities/mediaplayerinterface.h"
 #include "yio-model/mediaplayer/tvchannelmodel_mediaplayer.h"
+#include "yio-model/mediaplayer/epgmodel_mediaplayer.h"
 #include "yio-model/mediaplayer/searchmodel_mediaplayer.h"
 #include "yio-plugin/integration.h"
 #include "yio-plugin/plugin.h"
@@ -115,6 +116,7 @@ class Kodi : public Integration {
 
  private slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
     void onPollingTimerTimeout();
+    void onPollingEPGLoadTimerTimeout();
     void onProgressBarTimerTimeout();
     // void processMessage(QString message);
     void onPollingTimer();
@@ -132,13 +134,16 @@ class Kodi : public Integration {
     QString m_entityId;
     bool m_flage = false;
 
-    // polling tiQQueue m_sendQueue;mer
+    //  tiQQueue m_sendQueue;mer
+    QTimer* m_Timer;
     QTimer* m_pollingTimer;
+    QTimer* m_pollingEPGLoadTimer;
     QTimer* m_progressBarTimer;
     int m_progressBarPosition = 0;
 
     // Kodi auth stuff
     QMap <int, QString> m_mapKodiChannelNumberToTVHeadendUUID;
+   QMap <QString, int> m_mapTVHeadendUUIDToKodiChannelNumber;
     QString m_KodiClientPassword;
     QString m_KodiClientUser;
     QString m_KodiClientUrl;
@@ -165,7 +170,9 @@ class Kodi : public Integration {
     QString m_completeTVheadendJSONUrl = "";
     QTcpSocket* m_tcpSocketKodiEventServer;
     bool m_flagKodiEventServerOnline = false;
-
+       int m_currentEPGchannelToLoad = 0;
+       bool m_flagLoadingEPG = false;
+       QList<int> m_epgChannelList = {0, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
     // Kodi API calls
     /*void search(QString query);
     void search(QString query, QString type);
@@ -181,6 +188,8 @@ class Kodi : public Integration {
     void getTVEPGfromTVHeadend();
     void getTVChannelLogos();
     void clearMediaPlayerEntity();
+    void showepg();
+    void showepg(QVariant param);
 
     // get and post requests
     void getRequestWithAuthentication(const QString& url, const QString& method,
