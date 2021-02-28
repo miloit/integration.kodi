@@ -92,6 +92,7 @@ UI_DIR = $$PWD/build/$$DESTINATION_PATH/ui
 DISTFILES += \
     dependencies.cfg \
     kodi.json.in \
+    setup-schema.json \
     version.txt.in \
     README.md
 
