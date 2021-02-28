@@ -18,95 +18,95 @@
         "entity_id"
     ],
     "properties": {
-    	"kodiclient_url": {
-            "$id": "#/properties/client_url", 
+        "kodiclient_url": {
+            "$id": "#/properties/kodi1_url",
             "type": "string",
-            "title": "Client url",
-            "description": "Client url from the Kodi Developer page.",
+            "title": "Kodi host",
+            "description": "Kodi API URL from the Kodi Developer page.",
             "default": "",
             "examples": [
-                "JKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiVlx1MDAxNcKbwoNUwoonbFPCu8KhwrYiLCJpYXQiO"
+                "192.168.1.100"
             ]
         },
         "kodiclient_port": {
-            "$id": "#/properties/client_port",
+            "$id": "#/properties/kodi2_port",
             "type": "string",
-            "title": "Client port",
-            "description": "Client port from the Kodi Developer page.",
-            "default": "",
+            "title": "Kodi port",
+            "description": "Kodi API port from the Kodi Developer page.",
+            "default": "9090",
             "examples": [
-                "JKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiVlx1MDAxNcKbwoNUwoonbFPCu8KhwrYiLCJpYXQiO"
+                "8080"
             ]
         },
         "kodiclient_user": {
-            "$id": "#/properties/client_username",
+            "$id": "#/properties/kodi3_username",
             "type": "string",
-            "title": "Client username",
+            "title": "Kodi username",
             "description": "Client username from the Kodi Developer page.",
-            "default": "",
+            "default": "kodi",
             "examples": [
-                "JKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiVlx1MDAxNcKbwoNUwoonbFPCu8KhwrYiLCJpYXQiO"
+                "kodi"
             ]
         },
         "kodiclient_password": {
-            "$id": "#/properties/client_password",
+            "$id": "#/properties/kodi4_password",
             "type": "string",
-            "title": "Client password",
+            "title": "Kodi password",
             "description": "Client password from the Kodi Developer page.",
             "default": "",
             "examples": [
-                "JKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiVlx1MDAxNcKbwoNUwoonbFPCu8KhwrYiLCJpYXQiO"
+                ""
             ]
         },
         "tvheadendclient_url": {
-            "$id": "#/properties/client_url",
+            "$id": "#/properties/tvclient_url",
             "type": "string",
-            "title": "Client url",
-            "description": "Client url from the Kodi Developer page.",
+            "title": "Tvheadend host",
+            "description": "Tvheadend host name",
             "default": "",
             "examples": [
-                "JKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiVlx1MDAxNcKbwoNUwoonbFPCu8KhwrYiLCJpYXQiO"
+                "192.168.1.101"
             ]
         },
         "tvheadendclient_port": {
-            "$id": "#/properties/client_port",
+            "$id": "#/properties/tvclient_port",
             "type": "string",
-            "title": "Client port",
-            "description": "Client port from the Kodi Developer page.",
-            "default": "",
+            "title": "Tvheadend port",
+            "description": "Tvheadend client port.",
+            "default": "9981",
             "examples": [
-                "JKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiVlx1MDAxNcKbwoNUwoonbFPCu8KhwrYiLCJpYXQiO"
+                "9981"
             ]
         },
         "tvheadendclient_user": {
-            "$id": "#/properties/client_username",
+            "$id": "#/properties/tvclient_username",
             "type": "string",
-            "title": "Client username",
-            "description": "Client username from the Kodi Developer page.",
+            "title": "Tvheadend client username",
+            "description": "Tvheadend client username.",
             "default": "",
             "examples": [
-                "JKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiVlx1MDAxNcKbwoNUwoonbFPCu8KhwrYiLCJpYXQiO"
+                "kodi"
             ]
         },
         "tvhadendclient_password": {
-            "$id": "#/properties/client_password",
+            "$id": "#/properties/tvclient_password",
             "type": "string",
-            "title": "Client password",
-            "description": "Client password from the Kodi Developer page.",
+            "title": "Tvheadend client password",
+            "description": "Tvheadend client password.",
             "default": "",
             "examples": [
-                "JKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiVlx1MDAxNcKbwoNUwoonbFPCu8KhwrYiLCJpYXQiO"
+                ""
             ]
         },
         "entity_id": {
             "$id": "#/properties/entity_id",
             "type": "string",
-            "title": "The entity_id schema",
+            "title": "The mediaplayer entity_id",
             "description": "Not user input. A unique entity id.",
-            "default": "",
+            "default": "media_player.kodi",
             "examples": [
-                "spotify.spotify",
-                "6550f44c-7f11-11ea-bc55-0242ac130003"
+                "6550f44c-7f11-11ea-bc55-0242ac130003",
+                "FIXME entity_id is somehow filtered in web-configurator and neither auto-generated"
             ]
         }
     }
