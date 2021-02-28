@@ -101,7 +101,6 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
                       << "SHUFFLE"
                       << "SEARCH"
                       << "MEDIAPLAYEREPGVIEW"
-                      << "MEDIAPLAYERCOMMAND"
                       << "MEDIAPLAYERREMOTE"
                       << "TVCHANNELLIST";
     addAvailableEntity(m_entityId, "media_player", integrationId(), friendlyName(), supportedFeatures);
