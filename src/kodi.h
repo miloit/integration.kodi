@@ -143,7 +143,7 @@ class Kodi : public Integration {
 
     // Kodi auth stuff
     QMap <int, QString> m_mapKodiChannelNumberToTVHeadendUUID;
-   QMap <QString, int> m_mapTVHeadendUUIDToKodiChannelNumber;
+    QMap <QString, int> m_mapTVHeadendUUIDToKodiChannelNumber;
     QString m_KodiClientPassword;
     QString m_KodiClientUser;
     QString m_KodiClientUrl;
@@ -172,7 +172,7 @@ class Kodi : public Integration {
     bool m_flagKodiEventServerOnline = false;
        int m_currentEPGchannelToLoad = 0;
        bool m_flagLoadingEPG = false;
-       QList<int> m_epgChannelList = {0, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
+       QList<int> m_epgChannelList = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
     // Kodi API calls
     /*void search(QString query);
     void search(QString query, QString type);

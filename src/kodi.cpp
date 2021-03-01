@@ -165,10 +165,10 @@ void Kodi::connect() {
     QObject::connect(networkManagerTvHeadend, &QNetworkAccessManager::finished, this, [=](QNetworkReply* reply) {
         if (!reply->error()) {
             m_flagTVHeadendOnline = true;
-            //getTVEPGfromTVHeadend();
+            //  getTVEPGfromTVHeadend();
             m_pollingEPGLoadTimer->setInterval(1000);
             QObject::connect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
-            //m_pollingEPGLoadTimer->start();
+            //  m_pollingEPGLoadTimer->start();
         } else {
             m_flagTVHeadendOnline = false;
             qCDebug(m_logCategory) << "TV Headend not reachable";
@@ -196,7 +196,7 @@ void Kodi::connect() {
         requestTVHeadend.setUrl(QUrl(m_completeTVheadendJSONUrl));
 
         requestTVHeadend.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        //networkManagerTvHeadend->get(requestTVHeadend);
+        //  networkManagerTvHeadend->get(requestTVHeadend);
     } else {
         qCDebug(m_logCategory) << "TVHeadend not confgured";
         m_flagTVHeadendConfigured = false;
@@ -216,7 +216,7 @@ void Kodi::connect() {
         requestKodi.setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(paramutf8.size()));
 
         // send the get request
-        //networkManagerKodi->post(requestKodi, paramutf8);
+        // networkManagerKodi->post(requestKodi, paramutf8);
 
     } else {
         qCDebug(m_logCategory) << "Kodi not confgured";
@@ -322,8 +322,7 @@ void Kodi::getTVEPGfromTVHeadend() {
         m_flagLoadingEPG = false;
     });
     int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
-    if (m_flagTVHeadendOnline && temp_Timestamp <= 0)
-    {
+    if (m_flagTVHeadendOnline && temp_Timestamp <= 0) {
         /*getRequestWithAuthentication(m_TvheadendClientUrl +":" + m_TvheadendClientPort +
                                      "/api/epg/events/grid?limit=2000", "getTVEPGfromTVHeadend",
                                      m_TvheadendClientUser, m_TvheadendClientPassword);*/
@@ -1024,7 +1023,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
         // search(param.toString());
     } else if (command == MediaPlayerDef::C_GETMEDIAPLAYEREPGVIEW) {
         if (param == "all") {
-            //getCompleteTVChannelList();
+            //  getCompleteTVChannelList();
             showepg();
         } else {
             showepg(param);
@@ -1196,7 +1195,6 @@ void Kodi::onPollingEPGLoadTimerTimeout() {
     });
     int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
     if (temp_Timestamp <= 0) {
-
         /*if (m_checkProcessTVHeadendAvailability.Running) {
                                                      m_checkProcessTVHeadendAvailability.start("curl", QStringList() << "-s" << m_completeTVheadendJSONUrl);
                                                  }*/
@@ -1295,8 +1293,7 @@ void Kodi::onProgressBarTimerTimeout() {
     }
 }
 
-void Kodi::showepg(){
-
+void Kodi::showepg() {
     QObject* context_getCompleteTVChannelList = new QObject(this);
     QObject::connect(this, &Kodi::requestReadygetCompleteTVChannelList, context_getCompleteTVChannelList,
                      [=](const QVariantMap& map, const QString& rMethod) {
@@ -1319,28 +1316,23 @@ void Kodi::showepg(){
         int ynull = current.date().year();
 
         for (int i = hnull; i < (hnull+80); i++) {
-            if (i < 24){
+            if (i < 24) {
                 epgitem->addEPGItem(QString::number(i), ((i-hnull)*360) +170, 0, 360, 40, "epg", "#FF0000", "#FFFFFF", QString::number(i) + " Uhr  " + QString::number(dnull) +"." +QString::number(mnull)+"." +QString::number(ynull), "", "", "", "", "", commands);
-            }
-            else if (i <48)
-            {
+            } else if (i <48) {
                 epgitem->addEPGItem(QString::number(i), ((i-hnull)*360)+170, 0, 360, 40, "epg", "#FF0000", "#FFFFFF", QString::number((i-24)) + " Uhr  " + QString::number(dnull+1) +"." +QString::number(mnull)+"." +QString::number(ynull), "", "", "", "", "", commands);
-            }else if (i <72) {
+            } else if (i <72) {
                 epgitem->addEPGItem(QString::number(i), ((i-hnull)*360)+170, 0, 360, 40, "epg", "#FF0000", "#FFFFFF", QString::number((i-48)) + " Uhr  " + QString::number(dnull+2) +"." +QString::number(mnull)+"." +QString::number(ynull), "", "", "", "", "", commands);
-            }
-            else {
+            } else {
                 epgitem->addEPGItem(QString::number(i), ((i-hnull)*360)+170, 0, 360, 40, "epg", "#FF0000", "#FFFFFF", QString::number((i-72)) + " Uhr  " + QString::number(dnull+3) +"." +QString::number(mnull)+"." +QString::number(ynull), "", "", "", "", "", commands);
             }
         }
         int i = 1;
-        for(QList<int>::const_iterator it(m_epgChannelList.begin());it!=m_epgChannelList.end();++it)
-        {
+        for (QList<int>::const_iterator it(m_epgChannelList.begin()); it != m_epgChannelList.end(); ++it) {
             epgitem->addEPGItem(QString::number(i), 0, i, 170, 40, "epg", "#0000FF", "#FFFFFF", m_KodiTVChannelList[int(*it)].toMap().value("label").toString(), "", "", "", "", "", commands);
             i++;
         }
         for (int i=0; i < m_currentEPG.length(); i++) {
-            if (m_epgChannelList.contains(m_mapTVHeadendUUIDToKodiChannelNumber.value(m_currentEPG.value(i).toMap().value("channelUuid").toString()))){
-
+            if (m_epgChannelList.contains(m_mapTVHeadendUUIDToKodiChannelNumber.value(m_currentEPG.value(i).toMap().value("channelUuid").toString()))) {
                 timestamp.setTime_t(m_currentEPG.value(i).toMap().value("start").toInt());
                 int column = m_mapTVHeadendUUIDToKodiChannelNumber.value(m_currentEPG.value(i).toMap().value("channelUuid").toString());
                 if (column != 0) {
@@ -1367,13 +1359,9 @@ void Kodi::showepg(){
                 "/jsonrpc", "epg", "{ \"jsonrpc\": \"2.0\","
                                    " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
                                    " \"id\":" +QString::number(m_globalKodiRequestID)+ "}");
-
 }
 
-
-
-void Kodi::showepg(QVariant param){
-
+void Kodi::showepg(QVariant param) {
     QObject* context_getCompleteTVChannelList = new QObject(this);
     QObject::connect(this, &Kodi::requestReadygetCompleteTVChannelList, context_getCompleteTVChannelList,
                      [=](const QVariantMap& map, const QString& rMethod) {
@@ -1390,7 +1378,7 @@ void Kodi::showepg(QVariant param){
         // 60minuten = 360px; 1min = 6px
 
         BrowseEPGModel* epgitem = new BrowseEPGModel(QString::number(m_mapTVHeadendUUIDToKodiChannelNumber.value(m_currentEPG.value(param.toInt()).toMap().value("channelUUID").toString())), 0, 0, 0, 0, "epg", "#FFFF00", "#FFFFFF", m_currentEPG.value(param.toInt()).toMap().value("title").toString(), m_currentEPG.value(param.toInt()).toMap().value("subtitle").toString(), m_currentEPG.value(param.toInt()).toMap().value("description").toString(), "starttime", "endtime", "http://" + m_TvheadendClientUser +":" +m_TvheadendClientPassword+"@"+ m_TvheadendClientUrl.mid(7) +":" +m_TvheadendClientPort +"/"+ m_currentEPG.value(param.toInt()).toMap().value("channelIcon").toString(), commands);
-        //epgitem->addEPGItem(QString::number(i), (h*6), column, width, 40, "epg", "#FFFF00", m_currentEPG.value(i).toMap().value("title").toString(), "", "", "", "", "", commands);
+        // epgitem->addEPGItem(QString::number(i), (h*6), column, width, 40, "epg", "#FFFF00", m_currentEPG.value(i).toMap().value("title").toString(), "", "", "", "", "", commands);
         /*QDateTime current = QDateTime::currentDateTime();
         int hnull = current.time().hour();
         for (int i = hnull; i < (hnull+5); i++) {
@@ -1425,8 +1413,4 @@ void Kodi::showepg(QVariant param){
                 "/jsonrpc", "epg", "{ \"jsonrpc\": \"2.0\","
                                    " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
                                    " \"id\":" +QString::number(m_globalKodiRequestID)+ "}");
-
 }
-
-
-
