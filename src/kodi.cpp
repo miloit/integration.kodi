@@ -67,13 +67,13 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
                 m_tvheadendJSONUrl.setPort(port);
             }
 
-            m_TvheadendClientUser = map.value("tvheadendclient_user").toString();
-            m_TvheadendClientPassword = map.value("tvheadendclient_password").toString();
+            m_tvheadendClientUser = map.value("tvheadendclient_user").toString();
+            m_tvheadendClientPassword = map.value("tvheadendclient_password").toString();
 
             m_entityId = map.value("entity_id").toString();
             if (m_entityId.isEmpty()) {
                 m_entityId = "media_player.kodi";
-                qCInfo(m_logCategory) << "Property 'entity_id' not defined in integration. Using default:" << m_entityId;
+                qCWarning(m_logCategory) << "Property 'entity_id' not defined in integration. Using default:" << m_entityId;
             }
             // only one Kodi instance supported per integration definition!
             break;
@@ -196,7 +196,7 @@ void Kodi::connect() {
     if (!m_tvheadendJSONUrl.isEmpty()) {
         m_flagTVHeadendConfigured = true;
         // m_checkProcessTVHeadendAvailability.start("curl", QStringList() << "-s" << m_tvheadendJSONUrl);
-        QString concatenated = m_TvheadendClientUser+":"+m_TvheadendClientPassword;
+        QString concatenated = m_tvheadendClientUser+":"+m_tvheadendClientPassword;
         QByteArray data = concatenated.toLocal8Bit().toBase64();
         QString headerData = "Basic " + data;
         requestTVHeadend.setRawHeader("Authorization", headerData.toLocal8Bit());
@@ -225,8 +225,6 @@ void Kodi::connect() {
                                        +QString::number(m_globalKodiRequestID)+" }").toUtf8();
         requestKodi.setUrl(m_kodiJSONRPCUrl);
         requestKodi.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        // TODO isn't ContentLength set automatically?
-        requestKodi.setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(paramutf8.size()));
 
         // send the get request
         networkManagerKodi->post(requestKodi, paramutf8);
@@ -913,7 +911,7 @@ void Kodi::tvheadendGetRequest(const QString& path, const QString& callFunction)
 
     // set headers
     // TODO QNetWorkRequest should have built in support for authentication
-    QString concatenated = m_TvheadendClientUser+":"+m_TvheadendClientPassword;
+    QString concatenated = m_tvheadendClientUser+":"+m_tvheadendClientPassword;
     QByteArray data = concatenated.toLocal8Bit().toBase64();
     QString headerData = "Basic " + data;
     request.setRawHeader("Authorization", headerData.toLocal8Bit());
@@ -1098,8 +1096,6 @@ void Kodi::postRequest(const QString& callFunction, const int& requestid) {
     QJsonDocument jsonDoc(json);
     QByteArray jsonData = jsonDoc.toJson();
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    // TODO isn't ContentLength set automatically?
-    request.setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(jsonData.size()));
 
     // send the get request
     manager->post(request, jsonData);
@@ -1168,8 +1164,6 @@ void Kodi::postRequest(const QString& callfunction, const QString& param) {
     QByteArray paramutf8 = param.toUtf8();
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    // TODO isn't ContentLength set automatically?
-    request.setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(paramutf8.size()));
 
     // send the post request
     qCDebug(m_logCategory) << "POST:" << request.url() << paramutf8;
@@ -1203,7 +1197,7 @@ void Kodi::onPollingEPGLoadTimerTimeout() {
         /*if (m_checkProcessTVHeadendAvailability.Running) {
                                                      m_checkProcessTVHeadendAvailability.start("curl", QStringList() << "-s" << m_tvheadendJSONUrl);
                                                  }*/
-        QString concatenated = m_TvheadendClientUser+":"+m_TvheadendClientPassword;
+        QString concatenated = m_tvheadendClientUser+":"+m_tvheadendClientPassword;
         QByteArray data = concatenated.toLocal8Bit().toBase64();
         QString headerData = "Basic " + data;
         requestTVHeadend.setRawHeader("Authorization", headerData.toLocal8Bit());
@@ -1267,8 +1261,6 @@ void Kodi::onPollingTimerTimeout() {
                                        +QString::number(m_globalKodiRequestID)+" }").toUtf8();
         requestKodi.setUrl(m_kodiJSONRPCUrl);
         requestKodi.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        // TODO isn't ContentLength set automatically?
-        requestKodi.setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(paramutf8.size()));
 
         // send the get request
         networkManagerKodi->post(requestKodi, paramutf8);
@@ -1383,11 +1375,13 @@ void Kodi::showepg(int channel){
         QString     channelId = "2";
         QVariantMap channelEpg = m_currentEPG.value(channel).toMap();
         QUrl        imageUrl(m_tvheadendJSONUrl);
-        if (!m_TvheadendClientUser.isEmpty()) {
-            imageUrl.setUserName(m_TvheadendClientUser);
-            imageUrl.setPassword(m_TvheadendClientPassword);
+        if (!imageUrl.isEmpty()) {
+            if (!m_tvheadendClientUser.isEmpty()) {
+                imageUrl.setUserName(m_tvheadendClientUser);
+                imageUrl.setPassword(m_tvheadendClientPassword);
+            }
+            imageUrl.setPath("/"+ channelEpg.value("channelIcon").toString());
         }
-        imageUrl.setPath("/"+ channelEpg.value("channelIcon").toString());
 
         QString     thumbnail = "";
         QString     unqueId = "";

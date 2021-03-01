@@ -147,10 +147,10 @@ class Kodi : public Integration {
     // Kodi auth stuff
     QMap <int, QString> m_mapKodiChannelNumberToTVHeadendUUID;
     QMap <QString, int> m_mapTVHeadendUUIDToKodiChannelNumber;
-    QString m_KodiClientPassword;
-    QString m_KodiClientUser;
-    QString m_TvheadendClientPassword;
-    QString m_TvheadendClientUser;
+    QString m_kodiClientPassword;
+    QString m_kodiClientUser;
+    QString m_tvheadendClientPassword;
+    QString m_tvheadendClientUser;
     QList<QVariant> m_KodiTVChannelList;
     KodiGetCurrentPlayerState m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
     KodiGetCurrentPlayerState m_KodiNextPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
@@ -161,7 +161,7 @@ class Kodi : public Integration {
     int m_EPGExpirationTimestamp = 0;
     QList<QVariant> m_currentEPG;
     bool m_flag = false;
-    QProcess                    m_checkProcessKodiAvailability;
+    QProcess m_checkProcessKodiAvailability;
     QProcess m_checkProcessTVHeadendAvailability;
     bool m_flagKodiOnline = false;
     bool m_flagTVHeadendOnline = false;
