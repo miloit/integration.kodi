@@ -21,24 +21,24 @@
  *****************************************************************************/
 
 #pragma once
-#include <QNetworkAccessManager>
-#include <QUrl>
-#include <QNetworkRequest>
-#include <QNetworkReply>
-#include <QVariantMap>
-#include <QNetworkCookieJar>
+#include <QAuthenticator>
 #include <QByteArray>
 #include <QDebug>
-#include <QAuthenticator>
-#include <QTimer>
+#include <QNetworkAccessManager>
+#include <QNetworkCookieJar>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QObject>
 #include <QProcess>
 #include <QTcpSocket>
+#include <QTimer>
+#include <QUrl>
+#include <QVariantMap>
 
 #include "yio-interface/entities/mediaplayerinterface.h"
-#include "yio-model/mediaplayer/tvchannelmodel_mediaplayer.h"
 #include "yio-model/mediaplayer/epgmodel_mediaplayer.h"
 #include "yio-model/mediaplayer/searchmodel_mediaplayer.h"
+#include "yio-model/mediaplayer/tvchannelmodel_mediaplayer.h"
 #include "yio-plugin/integration.h"
 #include "yio-plugin/plugin.h"
 
@@ -84,11 +84,9 @@ class Kodi : public Integration {
     void enterStandby() override;
     void leaveStandby() override;
 
-
     // void registerInterface(const QString &name, QObject *interface);
     // void call(const QString &interface, const QString &method,
     // const QVariantList &args, std::function<void(QVariant)> callback = NULL);
-
 
  signals:
     // void requestReady(const QVariantMap& obj, const QString& url);
@@ -104,8 +102,6 @@ class Kodi : public Integration {
     void requestReadyCommandPause(const QVariantMap& obj, const QString& url);
     void requestReadyCommandNext(const QVariantMap& obj, const QString& url);
     void requestReadyCommandPrevious(const QVariantMap& obj, const QString& url);
-
-
 
     // void requestReadyoiu(const QVariantMap& obj, const QString& url);
     // void requestReadyParser(const QJsonDocument& doc, const QString& url);
@@ -128,47 +124,47 @@ class Kodi : public Integration {
     QString fixUrl(QString url);
 
  private:
-    bool m_flagTVHeadendConfigured = false;
-    bool m_flagKodiConfigured = false;
-    int m_currentkodiplayerid = -1;
+    bool    m_flagTVHeadendConfigured = false;
+    bool    m_flagKodiConfigured = false;
+    int     m_currentkodiplayerid = -1;
     QString m_currentKodiMediaType = "notset";
     QString m_currentkodiplayertype = "unknown";
     bool    m_startup = true;
     QString m_entityId;
-    bool m_flage = false;
+    bool    m_flage = false;
 
     //  tiQQueue m_sendQueue;mer
     QTimer* m_Timer;
     QTimer* m_pollingTimer;
     QTimer* m_pollingEPGLoadTimer;
     QTimer* m_progressBarTimer;
-    int m_progressBarPosition = 0;
+    int     m_progressBarPosition = 0;
 
     // Kodi auth stuff
-    QMap <int, QString> m_mapKodiChannelNumberToTVHeadendUUID;
-    QMap <QString, int> m_mapTVHeadendUUIDToKodiChannelNumber;
-    QString m_tvheadendClientPassword;
-    QString m_tvheadendClientUser;
-    QList<QVariant> m_KodiTVChannelList;
+    QMap<int, QString>        m_mapKodiChannelNumberToTVHeadendUUID;
+    QMap<QString, int>        m_mapTVHeadendUUIDToKodiChannelNumber;
+    QString                   m_tvheadendClientPassword;
+    QString                   m_tvheadendClientUser;
+    QList<QVariant>           m_KodiTVChannelList;
     KodiGetCurrentPlayerState m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
     KodiGetCurrentPlayerState m_KodiNextPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
-    QString m_KodiCurrentPlayerThumbnail = "";
-    QString m_KodiCurrentPlayerTitle = "";
-    int m_globalKodiRequestID = 12345;
-    int m_tvProgrammExpireTimeInHours = 2;
-    int m_EPGExpirationTimestamp = 0;
-    QList<QVariant> m_currentEPG;
-    bool m_flag = false;
-    QProcess m_checkProcessKodiAvailability;
-    QProcess m_checkProcessTVHeadendAvailability;
-    bool m_flagKodiOnline = false;
-    bool m_flagTVHeadendOnline = false;
-    QUrl m_kodiJSONRPCUrl;
-    QUrl m_tvheadendJSONUrl;
-    QTcpSocket* m_tcpSocketKodiEventServer;
-    bool m_flagKodiEventServerOnline = false;
-    int m_currentEPGchannelToLoad = 0;
-    bool m_flagLoadingEPG = false;
+    QString                   m_KodiCurrentPlayerThumbnail = "";
+    QString                   m_KodiCurrentPlayerTitle = "";
+    int                       m_globalKodiRequestID = 12345;
+    int                       m_tvProgrammExpireTimeInHours = 2;
+    int                       m_EPGExpirationTimestamp = 0;
+    QList<QVariant>           m_currentEPG;
+    bool                      m_flag = false;
+    QProcess                  m_checkProcessKodiAvailability;
+    QProcess                  m_checkProcessTVHeadendAvailability;
+    bool                      m_flagKodiOnline = false;
+    bool                      m_flagTVHeadendOnline = false;
+    QUrl                      m_kodiJSONRPCUrl;
+    QUrl                      m_tvheadendJSONUrl;
+    QTcpSocket*               m_tcpSocketKodiEventServer;
+    bool                      m_flagKodiEventServerOnline = false;
+    int                       m_currentEPGchannelToLoad = 0;
+    bool                      m_flagLoadingEPG = false;
     QList<int> m_epgChannelList = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
     // Kodi API calls
     /*void search(QString query);
