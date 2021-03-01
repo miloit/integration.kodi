@@ -50,6 +50,7 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
     for (QVariantMap::const_iterator iter = config.begin(); iter != config.end(); ++iter) {
         if (iter.key() == Integration::OBJ_DATA) {
             QVariantMap map = iter.value().toMap();
+            // TODO combine host & port configuration into kodiclient_url?
             QString host = map.value("kodiclient_url").toString();
             int port = map.value("kodiclient_port").toInt();
             if (!host.isEmpty()) {
@@ -57,18 +58,33 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
                 m_kodiJSONRPCUrl.setHost(host);
                 m_kodiJSONRPCUrl.setPort(port);
                 m_kodiJSONRPCUrl.setPath("/jsonrpc");
+
+                QString password = map.value("kodiclient_password").toString();
+                if (!password.isEmpty()) {
+                    m_kodiJSONRPCUrl.setUserName(map.value("kodiclient_user").toString());
+                    m_kodiJSONRPCUrl.setPassword(password);
+                }
             }
 
+            // TODO combine host & port configuration into tvheadendclient_url?
             host = map.value("tvheadendclient_url").toString();
             port = map.value("tvheadendclient_port").toInt();
             if (!host.isEmpty()) {
                 m_tvheadendJSONUrl.setScheme("http");
                 m_tvheadendJSONUrl.setHost(host);
                 m_tvheadendJSONUrl.setPort(port);
-            }
 
-            m_tvheadendClientUser = map.value("tvheadendclient_user").toString();
-            m_tvheadendClientPassword = map.value("tvheadendclient_password").toString();
+                // TODO QUrl username & password should be sufficient
+                m_tvheadendClientUser = map.value("tvheadendclient_user").toString();
+                m_tvheadendClientPassword = map.value("tvheadendclient_password").toString();
+
+                /* TODO test if QNetworkRequest works with a QUrl having username & password: QNetworkAccessManager _should_ authenticate automatically
+                if (!m_tvheadendClientPassword.isEmpty()) {
+                    m_tvheadendJSONUrl.setUserName(m_tvheadendClientUser);
+                    m_tvheadendJSONUrl.setPassword(m_tvheadendClientPassword);
+                }
+                */
+            }
 
             m_entityId = map.value("entity_id").toString();
             if (m_entityId.isEmpty()) {
@@ -79,6 +95,12 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
             break;
         }
     }
+
+    if (m_kodiJSONRPCUrl.isEmpty()) {
+        qCCritical(m_logCategory) << "Error loading Kodi integration: kodiclient_url not configured!";
+        return;
+    }
+
     m_pollingTimer = new QTimer(this);
     m_pollingEPGLoadTimer = new QTimer(this);
     // m_pollingTimer->setInterval(2000);
@@ -196,6 +218,7 @@ void Kodi::connect() {
     if (!m_tvheadendJSONUrl.isEmpty()) {
         m_flagTVHeadendConfigured = true;
         // m_checkProcessTVHeadendAvailability.start("curl", QStringList() << "-s" << m_tvheadendJSONUrl);
+        // TODO test if QNetworkRequest works with a QUrl having username & password: QNetworkAccessManager _should_ authenticate automatically
         QString concatenated = m_tvheadendClientUser+":"+m_tvheadendClientPassword;
         QByteArray data = concatenated.toLocal8Bit().toBase64();
         QString headerData = "Basic " + data;
@@ -910,7 +933,7 @@ void Kodi::tvheadendGetRequest(const QString& path, const QString& callFunction)
         qCDebug(m_logCategory) << accessibility; });
 
     // set headers
-    // TODO QNetWorkRequest should have built in support for authentication
+    // TODO test if QNetworkRequest works with a QUrl having username & password: QNetworkAccessManager _should_ authenticate automatically
     QString concatenated = m_tvheadendClientUser+":"+m_tvheadendClientPassword;
     QByteArray data = concatenated.toLocal8Bit().toBase64();
     QString headerData = "Basic " + data;
@@ -1197,6 +1220,7 @@ void Kodi::onPollingEPGLoadTimerTimeout() {
         /*if (m_checkProcessTVHeadendAvailability.Running) {
                                                      m_checkProcessTVHeadendAvailability.start("curl", QStringList() << "-s" << m_tvheadendJSONUrl);
                                                  }*/
+        // TODO test if QNetworkRequest works with a QUrl having username & password: QNetworkAccessManager _should_ authenticate automatically
         QString concatenated = m_tvheadendClientUser+":"+m_tvheadendClientPassword;
         QByteArray data = concatenated.toLocal8Bit().toBase64();
         QString headerData = "Basic " + data;
@@ -1272,7 +1296,8 @@ void Kodi::onPollingTimerTimeout() {
         /*if (m_checkProcessTVHeadendAvailability.Running) {
             m_checkProcessTVHeadendAvailability.start("curl", QStringList() << "-s" << m_tvheadendJSONUrl);
         }*/
-    /*  QString concatenated = m_TvheadendClientUser+":"+m_TvheadendClientPassword;
+    /*  // TODO test if QNetworkRequest works with a QUrl having username & password: QNetworkAccessManager _should_ authenticate automatically
+        QString concatenated = m_TvheadendClientUser+":"+m_TvheadendClientPassword;
         QByteArray data = concatenated.toLocal8Bit().toBase64();
         QString headerData = "Basic " + data;
         requestTVHeadend.setRawHeader("Authorization", headerData.toLocal8Bit());
