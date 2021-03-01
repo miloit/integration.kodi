@@ -167,9 +167,9 @@ class Kodi : public Integration {
     QUrl m_tvheadendJSONUrl;
     QTcpSocket* m_tcpSocketKodiEventServer;
     bool m_flagKodiEventServerOnline = false;
-       int m_currentEPGchannelToLoad = 0;
-       bool m_flagLoadingEPG = false;
-       QList<int> m_epgChannelList = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+    int m_currentEPGchannelToLoad = 0;
+    bool m_flagLoadingEPG = false;
+    QList<int> m_epgChannelList = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
     // Kodi API calls
     /*void search(QString query);
     void search(QString query, QString type);
