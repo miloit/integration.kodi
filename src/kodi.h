@@ -143,8 +143,6 @@ class Kodi : public Integration {
     // Kodi auth stuff
     QMap<int, QString>        m_mapKodiChannelNumberToTVHeadendUUID;
     QMap<QString, int>        m_mapTVHeadendUUIDToKodiChannelNumber;
-    QString                   m_tvheadendClientPassword;
-    QString                   m_tvheadendClientUser;
     QList<QVariant>           m_KodiTVChannelList;
     KodiGetCurrentPlayerState m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
     KodiGetCurrentPlayerState m_KodiNextPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
