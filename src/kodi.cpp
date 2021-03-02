@@ -338,6 +338,7 @@ void Kodi::getTVEPGfromTVHeadend() {
                 QJsonDocument   doc = QJsonDocument::fromJson(answer.toUtf8(), &parseerror);
                 if (parseerror.error != QJsonParseError::NoError) {
                     qCWarning(m_logCategory) << "JSON error : " << parseerror.errorString();
+                    m_flagLoadingEPG = false;
                     return;
                 }
 
@@ -1232,7 +1233,7 @@ void Kodi::onPollingEPGLoadTimerTimeout() {
     QObject::connect(networkManagerTvHeadend, &QNetworkAccessManager::finished, this, [=](QNetworkReply* reply) {
         if (!reply->error()) {
             m_flagTVHeadendOnline = true;
-            if (!m_flagLoadingEPG) {
+            if (!m_flagLoadingEPG && m_mapKodiChannelNumberToTVHeadendUUID.count() > 0) {
                 getTVEPGfromTVHeadend();
                 m_flagLoadingEPG = true;
             }
