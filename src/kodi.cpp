@@ -195,11 +195,12 @@ void Kodi::connect() {
         if (exitCode == 0 && exitStatus == QProcess::ExitStatus::NormalExit) {*/
     QObject::connect(networkManagerTvHeadend, &QNetworkAccessManager::finished, this, [=](QNetworkReply* reply) {
         if (!reply->error()) {
+            qCDebug(m_logCategory) << "tvheadend configured";
             m_flagTVHeadendOnline = true;
-            //  getTVEPGfromTVHeadend();
+            getTVEPGfromTVHeadend();
             m_pollingEPGLoadTimer->setInterval(1000);
             QObject::connect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
-            //  m_pollingEPGLoadTimer->start();
+             m_pollingEPGLoadTimer->start();
         } else {
             m_flagTVHeadendOnline = false;
             qCDebug(m_logCategory) << "TV Headend not reachable";
@@ -213,6 +214,7 @@ void Kodi::connect() {
 
     qCDebug(m_logCategory) << "STARTING Kodi";
     if (!m_tvheadendJSONUrl.isEmpty()) {
+        qCDebug(m_logCategory) << "1";
         m_flagTVHeadendConfigured = true;
         // m_checkProcessTVHeadendAvailability.start("curl", QStringList() << "-s" << m_tvheadendJSONUrl);
         // TODO(zehnm) test if QNetworkRequest works with a QUrl having username & password:
@@ -230,7 +232,8 @@ void Kodi::connect() {
         requestTVHeadend.setUrl(url);
 
         requestTVHeadend.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        //  networkManagerTvHeadend->get(requestTVHeadend);
+
+        networkManagerTvHeadend->get(requestTVHeadend);
     } else {
         qCDebug(m_logCategory) << "TVHeadend not confgured";
         m_flagTVHeadendConfigured = false;
