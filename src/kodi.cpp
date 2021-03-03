@@ -195,7 +195,7 @@ void Kodi::connect() {
             getTVEPGfromTVHeadend();
             m_pollingEPGLoadTimer->setInterval(1000);
             QObject::connect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
-             m_pollingEPGLoadTimer->start();
+            m_pollingEPGLoadTimer->start();
         } else {
             m_flagTVHeadendOnline = false;
             qCWarning(m_logCategory) << "TV Headend not reachable:" << reply->errorString();
@@ -214,10 +214,11 @@ void Kodi::connect() {
         // m_checkProcessTVHeadendAvailability.start("curl", QStringList() << "-s" << m_tvheadendJSONUrl);
         // set the URL
         QUrl url(m_tvheadendJSONUrl);
+        // set url parameters if required
         // QUrlQuery query;
-        // query.addQueryItem("q", "stringquery");
-        // query.addQueryItem("limit", "20");
-        // url.setQuery(query.query());
+        // query.addQueryItem("foo", "1");
+        // query.addQueryItem("bar", "2");
+        // url.setQuery(query);
         requestTVHeadend.setUrl(url);
 
         requestTVHeadend.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -355,14 +356,15 @@ void Kodi::getTVEPGfromTVHeadend() {
         });
     int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
     if (m_flagTVHeadendOnline && temp_Timestamp <= 0) {
-        /*tvheadendGetRequest("/api/epg/events/grid?limit=2000", "getTVEPGfromTVHeadend");*/
+        /*tvheadendGetRequest("/api/epg/events/grid", { { "limit", "2000" }, "getTVEPGfromTVHeadend");*/
 
         //}
         m_currentEPGchannelToLoad++;
         QString z = m_mapKodiChannelNumberToTVHeadendUUID.value(m_currentEPGchannelToLoad);
-        tvheadendGetRequest("/api/epg/events/grid?limit=2000&channel=" +
-                                m_mapKodiChannelNumberToTVHeadendUUID.value(m_currentEPGchannelToLoad),
-                            "getTVEPGfromTVHeadend");
+        tvheadendGetRequest(
+            "/api/epg/events/grid",
+            {{"limit", "2000"}, {"channel", m_mapKodiChannelNumberToTVHeadendUUID.value(m_currentEPGchannelToLoad)}},
+            "getTVEPGfromTVHeadend");
     }
 }
 void Kodi::getSingleTVChannelList(QString param) {
@@ -436,7 +438,7 @@ void Kodi::getSingleTVChannelList(QString param) {
                 QObject::disconnect(this, &Kodi::requestReadygetSingleTVChannelList, context_getSingleTVChannelList, 0);
             });
 
-        tvheadendGetRequest("/api/epg/events/grid?limit=1", "getSingleTVChannelList");
+        tvheadendGetRequest("/api/epg/events/grid", {{"limit", "1"}}, "getSingleTVChannelList");
 
     } else if (!m_flagTVHeadendOnline) {
         QObject::connect(
@@ -615,7 +617,7 @@ void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
                          context_getKodiChannelNumberToTVHeadendUUIDMapping->deleteLater();
                      });
     //
-    tvheadendGetRequest("/api/channel/list", "getKodiChannelNumberToTVHeadendUUIDMapping");
+    tvheadendGetRequest("/api/channel/list", {}, "getKodiChannelNumberToTVHeadendUUIDMapping");
 }
 
 void Kodi::getKodiAvailableTVChannelList() {
@@ -933,7 +935,8 @@ void Kodi::getCurrentPlayer() {
         }
     }
 }
-void Kodi::tvheadendGetRequest(const QString& path, const QString& callFunction) {
+void Kodi::tvheadendGetRequest(const QString& path, const QList<QPair<QString, QString> >& queryItems,
+                               const QString& callFunction) {
     // create new networkacces manager and request
     QNetworkAccessManager* manager = new QNetworkAccessManager(this);
     QNetworkRequest        request;
@@ -968,10 +971,11 @@ void Kodi::tvheadendGetRequest(const QString& path, const QString& callFunction)
     // set the URL
     QUrl url(m_tvheadendJSONUrl);
     url.setPath(path);
-    // QUrlQuery query;
-    // query.addQueryItem("q", "stringquery");
-    // query.addQueryItem("limit", "20");
-    // url.setQuery(query.query());
+    if (!queryItems.isEmpty()) {
+        QUrlQuery urlQuery;
+        urlQuery.setQueryItems(queryItems);
+        url.setQuery(urlQuery);
+    }
 
     request.setUrl(url);
     // send the get request
@@ -1081,7 +1085,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
             postRequest("sendCommandPrevious", jsonstring);
         }
     } else if (command == MediaPlayerDef::C_VOLUME_SET) {
-        // putRequest("/v1/me/player/volume?volume_percent=" + param.toString(), "");
+        // putRequest("/v1/me/player/volume" {{ "volume_percent", param.toString() }} "");
     } else if (command == MediaPlayerDef::C_SEARCH) {
         // search(param.toString());
     } else if (command == MediaPlayerDef::C_GETMEDIAPLAYEREPGVIEW) {
@@ -1254,11 +1258,11 @@ void Kodi::onPollingEPGLoadTimerTimeout() {
                                                  }*/
         // set the URL
         QUrl url(m_tvheadendJSONUrl);
+        // set url parameters if required
         // QUrlQuery query;
-        // query.addQueryItem("q", "stringquery");
-        // query.addQueryItem("limit", "20");
-        // url.setQuery(query.query());
-
+        // query.addQueryItem("foo", "1");
+        // query.addQueryItem("bar", "2");
+        // url.setQuery(query);
         requestTVHeadend.setUrl(url);
 
         requestTVHeadend.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -1324,10 +1328,11 @@ void Kodi::onPollingTimerTimeout() {
     /*
         // set the URL
         QUrl url(m_tvheadendJSONUrl);
+        // set url parameters if required
         // QUrlQuery query;
-        // query.addQueryItem("q", "stringquery");
-        // query.addQueryItem("limit", "20");
-        // url.setQuery(query.query());
+        // query.addQueryItem("foo", "1");
+        // query.addQueryItem("bar", "2");
+        // url.setQuery(query);
         requestTVHeadend.setUrl(url);
 
         requestTVHeadend.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
