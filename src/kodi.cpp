@@ -968,12 +968,13 @@ void Kodi::tvheadendGetRequest(const QString& path, const QString& callFunction)
     // set the URL
     QUrl url(m_tvheadendJSONUrl);
     url.setPath(path);
-    // QUrlQuery query;
-    // query.addQueryItem("q", "stringquery");
-    // query.addQueryItem("limit", "20");
-    // url.setQuery(query.query());
+    /*QUrlQuery query;
+    query.addQueryItem("q", "stringquery");
+    query.addQueryItem("limit", "20");
+    url.setQuery(query.query());*/
 
     request.setUrl(url);
+    QString u = request.url().toString();
     // send the get request
     manager->get(request);
 }
