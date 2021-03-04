@@ -183,7 +183,8 @@ class Kodi : public Integration {
     void showepg(int channel);
 
     // get and post requests
-    void tvheadendGetRequest(const QString& path, const QString& method);
+    void tvheadendGetRequest(const QString& path, const QList<QPair<QString, QString> >& queryItems,
+                             const QString& method);
 
     void postRequest(const QString& params, const int& id);
     void postRequest(const QString& function, const QString& jsonstring);
