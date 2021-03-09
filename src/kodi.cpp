@@ -193,7 +193,7 @@ void Kodi::connect() {
             qCDebug(m_logCategory) << "tvheadend configured";
             m_flagTVHeadendOnline = true;
             //getTVEPGfromTVHeadend();
-            m_pollingEPGLoadTimer->setInterval(1000);
+            m_pollingEPGLoadTimer->setInterval(3000);
             QObject::connect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
             m_pollingEPGLoadTimer->start();
         } else {
@@ -1289,7 +1289,7 @@ void Kodi::onPollingEPGLoadTimerTimeout() {
         // query.addQueryItem("foo", "1");
         // query.addQueryItem("bar", "2");
         // url.setQuery(query);
-        // requestTVHeadend.setUrl(url);
+        requestTVHeadend.setUrl(url);
 qCDebug(m_logCategory) << "urls" << m_tvheadendJSONUrl;
          requestTVHeadend.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
          networkManagerTvHeadend->get(requestTVHeadend);
