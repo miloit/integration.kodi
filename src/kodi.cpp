@@ -159,7 +159,7 @@ void Kodi::connect() {
             m_tcpSocketKodiEventServer->connectToHost(m_kodiJSONRPCUrl.host(), m_kodiJSONRPCUrl.port());
             if (m_tcpSocketKodiEventServer->waitForConnected()) {
                 QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(readyRead()), SLOT(readTcpData()));
-                QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(stateChanged()), SLOT(checkTCPSocket()));
+                //QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(stateChanged()), SLOT(checkTCPSocket()));
                 m_flagKodiEventServerOnline = true;
             } else {
                 m_flagKodiEventServerOnline = false;
@@ -192,7 +192,7 @@ void Kodi::connect() {
         if (!reply->error()) {
             qCDebug(m_logCategory) << "tvheadend configured";
             m_flagTVHeadendOnline = true;
-            getTVEPGfromTVHeadend();
+            //getTVEPGfromTVHeadend();
             m_pollingEPGLoadTimer->setInterval(1000);
             QObject::connect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
             m_pollingEPGLoadTimer->start();
@@ -264,13 +264,13 @@ void Kodi::clearMediaPlayerEntity() {
     entity->updateAttrByIndex(MediaPlayerDef::MEDIAIMAGE, "");
     entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::States::IDLE);
 }
-void Kodi::checkTCPSocket() {
+/*void Kodi::checkTCPSocket() {
     if (m_tcpSocketKodiEventServer->state() == QTcpSocket::ConnectedState) {
         m_flagKodiEventServerOnline = true;
     } else {
         m_flagKodiEventServerOnline = false;
     }
-}
+}*/
 
 void Kodi::readTcpData() {
     QString         reply = m_tcpSocketKodiEventServer->readAll();
@@ -293,17 +293,28 @@ void Kodi::readTcpData() {
 }
 
 void Kodi::disconnect() {
-    m_pollingTimer->stop();
-    m_progressBarTimer->stop();
-    QObject::disconnect(m_pollingTimer, &QTimer::timeout, this, &Kodi::onPollingTimerTimeout);
-    QObject::disconnect(m_progressBarTimer, &QTimer::timeout, this, &Kodi::onProgressBarTimerTimeout);
+    if (m_pollingTimer->isActive()) {
+        m_pollingTimer->stop();
+        QObject::disconnect(m_pollingTimer, &QTimer::timeout, this, &Kodi::onPollingTimerTimeout);
+    }
+    if (m_progressBarTimer->isActive()) {
+        m_progressBarTimer->stop();
+        QObject::disconnect(m_progressBarTimer, &QTimer::timeout, this, &Kodi::onProgressBarTimerTimeout);
+    }
+    if (m_pollingEPGLoadTimer->isActive()) {
+        m_pollingEPGLoadTimer->stop();
+        QObject::disconnect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
+    }
+
+
+
     QObject::disconnect(this, &Kodi::requestReadygetCurrentPlayer, 0, 0);
 
     if (m_flagKodiEventServerOnline) {
         m_tcpSocketKodiEventServer->close();
 
         QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(readyRead()), 0, 0);
-        QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(stateChanged()), 0, 0);
+        //QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(stateChanged()), 0, 0);
     }
 
     QObject::disconnect(&m_checkProcessTVHeadendAvailability,
@@ -355,16 +366,19 @@ void Kodi::getTVEPGfromTVHeadend() {
             m_flagLoadingEPG = false;
         });
     int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
-    if (m_flagTVHeadendOnline && temp_Timestamp <= 0) {
+    if (m_flagTVHeadendOnline && temp_Timestamp <= 0 && m_mapKodiChannelNumberToTVHeadendUUID.count() > 0 ) {
         /*tvheadendGetRequest("/api/epg/events/grid", { { "limit", "2000" }, "getTVEPGfromTVHeadend");*/
 
         //}
         m_currentEPGchannelToLoad++;
         QString z = m_mapKodiChannelNumberToTVHeadendUUID.value(m_currentEPGchannelToLoad);
+        qCDebug(m_logCategory) << "z" <<z;
+if (m_epgChannelList.contains(m_currentEPGchannelToLoad)) {
         tvheadendGetRequest(
             "/api/epg/events/grid",
             {{"limit", "2000"}, {"channel", m_mapKodiChannelNumberToTVHeadendUUID.value(m_currentEPGchannelToLoad)}},
             "getTVEPGfromTVHeadend");
+}
     }
 }
 void Kodi::getSingleTVChannelList(QString param) {
@@ -376,7 +390,7 @@ void Kodi::getSingleTVChannelList(QString param) {
             channelnumber = m_KodiTVChannelList[i].toMap().value("channelnumber").toString();
         }
     }
-    if (channelnumber != "0" && m_flagTVHeadendOnline) {
+    if (channelnumber != "0" && m_flagTVHeadendOnline && m_currentEPG.count() > 0) {
         QObject::connect(
             this, &Kodi::requestReadygetSingleTVChannelList, context_getSingleTVChannelList,
             [=](const QString& answer, const QString& requestFunction) {
@@ -971,18 +985,17 @@ void Kodi::tvheadendGetRequest(const QString& path, const QList<QPair<QString, Q
     // set the URL
     QUrl url(m_tvheadendJSONUrl);
     url.setPath(path);
-<<<<<<< HEAD
+
     /*QUrlQuery query;
     query.addQueryItem("q", "stringquery");
     query.addQueryItem("limit", "20");
     url.setQuery(query.query());*/
-=======
     if (!queryItems.isEmpty()) {
         QUrlQuery urlQuery;
         urlQuery.setQueryItems(queryItems);
         url.setQuery(urlQuery);
     }
->>>>>>> 626c8057e7efcaf7c1c34a0bac4299cdf8a02529
+
 
     request.setUrl(url);
     QString u = request.url().toString();
@@ -1245,13 +1258,17 @@ void Kodi::onPollingEPGLoadTimerTimeout() {
     QObject::connect(networkManagerTvHeadend, &QNetworkAccessManager::finished, this, [=](QNetworkReply* reply) {
         if (!reply->error()) {
             m_flagTVHeadendOnline = true;
-            if (!m_flagLoadingEPG && m_mapKodiChannelNumberToTVHeadendUUID.count() > 0) {
+            /*if (!m_flagLoadingEPG && m_mapKodiChannelNumberToTVHeadendUUID.count() > 0) {
                 getTVEPGfromTVHeadend();
                 m_flagLoadingEPG = true;
-            }
+            }*/
         } else {
             m_flagTVHeadendOnline = false;
             qCWarning(m_logCategory) << "TV Headend not reachable:" << reply->errorString();
+            /*if (m_pollingEPGLoadTimer->isActive()) {
+                m_pollingEPGLoadTimer->stop();
+                QObject::disconnect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
+            }*/
         }
         /*QObject::disconnect(&m_checkProcessTVHeadendAvailability,
                                                                      static_cast<void(QProcess::*)(int,
@@ -1259,7 +1276,8 @@ void Kodi::onPollingEPGLoadTimerTimeout() {
         QObject::disconnect(networkManagerTvHeadend, &QNetworkAccessManager::finished, this, 0);
     });
     int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
-    if (temp_Timestamp <= 0) {
+    qCDebug(m_logCategory) << "timez" << QString::number(temp_Timestamp);
+     if (temp_Timestamp <= 0 && m_mapKodiChannelNumberToTVHeadendUUID.count() > 0 ) {
         /*if (m_checkProcessTVHeadendAvailability.Running) {
                                                      m_checkProcessTVHeadendAvailability.start("curl", QStringList() <<
            "-s" << m_tvheadendJSONUrl);
@@ -1271,16 +1289,14 @@ void Kodi::onPollingEPGLoadTimerTimeout() {
         // query.addQueryItem("foo", "1");
         // query.addQueryItem("bar", "2");
         // url.setQuery(query);
-        requestTVHeadend.setUrl(url);
-
-        requestTVHeadend.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        networkManagerTvHeadend->get(requestTVHeadend);
-    }
+        // requestTVHeadend.setUrl(url);
+qCDebug(m_logCategory) << "urls" << m_tvheadendJSONUrl;
+         requestTVHeadend.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+         networkManagerTvHeadend->get(requestTVHeadend);
+     }
 }
 void Kodi::onPollingTimerTimeout() {
-    QNetworkAccessManager* networkManagerTvHeadend = new QNetworkAccessManager(this);
     QNetworkRequest        requestKodi;
-    QNetworkRequest        requestTVHeadend;
     QNetworkAccessManager* networkManagerKodi = new QNetworkAccessManager(this);
 
     /*QObject::connect(&m_checkProcessKodiAvailability,
