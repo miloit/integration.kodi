@@ -33,6 +33,8 @@
 #include <QTextCodec>
 #include <QUrlQuery>
 #include <QXmlStreamReader>
+#include <QFile>
+#include <QDataStream>
 
 KodiPlugin::KodiPlugin() : Plugin("yio.plugin.kodi", USE_WORKER_THREAD) {}
 
@@ -616,6 +618,7 @@ void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
                                  return;
                              }
                              mapOfEntries = doc.toVariant().toMap().value("entries").toList();
+                             if (!read(m_mapKodiChannelNumberToTVHeadendUUID) || !read(m_mapTVHeadendUUIDToKodiChannelNumber)) {
                              for (int i = 0; i < mapOfEntries.length(); i++) {
                                  for (int j = 0; j < m_KodiTVChannelList.length(); j++) {
                                      if (m_KodiTVChannelList[j].toMap().values().indexOf(
@@ -632,6 +635,12 @@ void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
                                      }
                                  }
                              }
+                             write(m_mapKodiChannelNumberToTVHeadendUUID);
+                             write(m_mapTVHeadendUUIDToKodiChannelNumber);
+                             }
+
+
+                                     QString h = "g";
                          }
                          QObject::disconnect(this, &Kodi::requestReadygetKodiChannelNumberToTVHeadendUUIDMapping,
                                              context_getKodiChannelNumberToTVHeadendUUIDMapping, 0);
@@ -1555,4 +1564,80 @@ QString Kodi::fixUrl(QString url) {
 }
 
 
+bool Kodi::read(QMap<QString, int> &map)
+{
+    QString filename = "/opt/yio/userdata/kodi/data1.dat";
+    QFile myFile(filename);
+    //QMap<int, QString> map;
+    QDataStream in(&myFile);
+    in.setVersion(QDataStream::Qt_5_3);
 
+    if (!myFile.open(QIODevice::ReadOnly))
+    {
+        qDebug() << "Could not read the file:" << filename << "Error string:" << myFile.errorString();
+        return false;
+    }
+
+    in >> map;
+    return true;
+}
+
+bool Kodi::write(QMap<QString, int> map)
+{
+   QString filename = "/opt/yio/userdata/kodi/data1.dat";
+   QFile myFile(filename);
+   if (!myFile.open(QIODevice::WriteOnly))
+   {
+       qDebug() << "Could not write to file:" << filename << "Error string:" << myFile.errorString();
+       return false;
+   }
+
+   /*QMap<int, QString> map;
+   //map.insert("one", "this is 1");
+   map.insert("two", "this is 2");
+   map.insert("three", "this is 3");*/
+
+   QDataStream out(&myFile);
+   out.setVersion(QDataStream::Qt_5_3);
+   out << map;
+   return true;
+}
+
+bool Kodi::read(QMap<int,QString> &map)
+{
+    QString filename = "/opt/yio/userdata/kodi/data.dat";
+    QFile myFile(filename);
+    //QMap<int, QString> map;
+    QDataStream in(&myFile);
+    in.setVersion(QDataStream::Qt_5_12);
+
+    if (!myFile.open(QIODevice::ReadOnly))
+    {
+        qDebug() << "Could not read the file:" << filename << "Error string:" << myFile.errorString();
+        return false;
+    }
+
+    in >> map;
+    return true;
+}
+
+bool Kodi::write(QMap<int, QString> map)
+{
+   QString filename = "/opt/yio/userdata/kodi/data.dat";
+   QFile myFile(filename);
+   if (!myFile.open(QIODevice::WriteOnly))
+   {
+       qDebug() << "Could not write to file:" << filename << "Error string:" << myFile.errorString();
+       return false;
+   }
+
+   /*QMap<int, QString> map;
+   //map.insert("one", "this is 1");
+   map.insert("two", "this is 2");
+   map.insert("three", "this is 3");*/
+
+   QDataStream out(&myFile);
+   out.setVersion(QDataStream::Qt_5_12);
+   out << map;
+   return true;
+}
