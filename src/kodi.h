@@ -132,6 +132,7 @@ class Kodi : public Integration {
     bool    m_startup = true;
     QString m_entityId;
     bool    m_flage = false;
+    bool    m_flagUpdateCurrentPlayer = true;
 
     //  tiQQueue m_sendQueue;mer
     QTimer* m_Timer;
@@ -181,7 +182,6 @@ class Kodi : public Integration {
     void clearMediaPlayerEntity();
     void showepg();
     void showepg(int channel);
-
     // get and post requests
     void tvheadendGetRequest(const QString& path, const QList<QPair<QString, QString> >& queryItems,
                              const QString& method);
