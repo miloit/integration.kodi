@@ -139,7 +139,6 @@ class Kodi : public Integration {
     bool    m_flage = false;
     bool    m_flagUpdateCurrentPlayer = true;
 
-    //  tiQQueue m_sendQueue;mer
     QTimer* m_Timer;
     QTimer* m_pollingTimer;
     QTimer* m_pollingEPGLoadTimer;
@@ -164,6 +163,7 @@ class Kodi : public Integration {
     bool                      m_flagKodiOnline = false;
     bool                      m_flagTVHeadendOnline = false;
     QUrl                      m_kodiJSONRPCUrl;
+    QUrl                      m_kodiEventServerUrl;
     QUrl                      m_tvheadendJSONUrl;
     QTcpSocket*               m_tcpSocketKodiEventServer;
     bool                      m_flagKodiEventServerOnline = false;
