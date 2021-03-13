@@ -118,6 +118,7 @@ class Kodi : public Integration {
     // void onPollingTimer();
     // void onNetWorkAccessible(QNetworkAccessManager::NetworkAccessibility accessibility);
     void readTcpData();
+    void clientDisconnected();
     void checkTCPSocket();
 
  private:

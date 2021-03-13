@@ -161,7 +161,10 @@ void Kodi::connect() {
             m_tcpSocketKodiEventServer = new QTcpSocket(this);
             m_tcpSocketKodiEventServer->connectToHost(m_kodiJSONRPCUrl.host(), 9090);
             if (m_tcpSocketKodiEventServer->waitForConnected()) {
-                QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(readyRead()), SLOT(readTcpData()));
+                QObject::connect(m_tcpSocketKodiEventServer, &QTcpSocket::readyRead, this, &Kodi::readTcpData);
+                QObject::connect(m_tcpSocketKodiEventServer, &QTcpSocket::disconnected, this,
+                                 &Kodi::clientDisconnected);
+
                 // QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(stateChanged()), SLOT(checkTCPSocket()));
                 m_flagKodiEventServerOnline = true;
             } else {
@@ -199,7 +202,7 @@ void Kodi::connect() {
             // getTVEPGfromTVHeadend();
             m_pollingEPGLoadTimer->setInterval(3000);
             QObject::connect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
-            // m_pollingEPGLoadTimer->start();
+            m_pollingEPGLoadTimer->start();
         } else {
             m_flagTVHeadendOnline = false;
             qCWarning(m_logCategory) << "TV Headend not reachable:" << reply->errorString();
@@ -268,13 +271,16 @@ void Kodi::clearMediaPlayerEntity() {
     entity->updateAttrByIndex(MediaPlayerDef::MEDIAIMAGE, "");
     entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::States::IDLE);
 }
-/*void Kodi::checkTCPSocket() {
+void Kodi::clientDisconnected() {
     if (m_tcpSocketKodiEventServer->state() == QTcpSocket::ConnectedState) {
         m_flagKodiEventServerOnline = true;
     } else {
         m_flagKodiEventServerOnline = false;
+        m_tcpSocketKodiEventServer->close();
+        QObject::disconnect(m_tcpSocketKodiEventServer, &QTcpSocket::readyRead, this, &Kodi::readTcpData);
+        QObject::disconnect(m_tcpSocketKodiEventServer, &QTcpSocket::disconnected, this, &Kodi::clientDisconnected);
     }
-}*/
+}
 
 void Kodi::readTcpData() {
     QString         reply = m_tcpSocketKodiEventServer->readAll();
@@ -314,16 +320,17 @@ void Kodi::disconnect() {
         QObject::disconnect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
     }
 
-    QObject::disconnect(this, &Kodi::requestReadygetCurrentPlayer, 0, 0);
+    // QObject::disconnect(this, &Kodi::requestReadygetCurrentPlayer, 0, 0);
 
     if (m_flagKodiEventServerOnline) {
         m_tcpSocketKodiEventServer->close();
 
-        QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(readyRead()), 0, 0);
+        QObject::disconnect(m_tcpSocketKodiEventServer, &QTcpSocket::readyRead, this, &Kodi::readTcpData);
+        QObject::disconnect(m_tcpSocketKodiEventServer, &QTcpSocket::disconnected, this, &Kodi::clientDisconnected);
         // QObject::disconnect(m_tcpSocketKodiEventServer, SIGNAL(stateChanged()), 0, 0);
     }
 
-    QObject::disconnect(&m_checkProcessTVHeadendAvailability,
+    /*QObject::disconnect(&m_checkProcessTVHeadendAvailability,
                         static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), 0, 0);
     QObject::disconnect(&m_checkProcessKodiAvailability,
                         static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), 0, 0);
