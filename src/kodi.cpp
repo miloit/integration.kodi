@@ -153,6 +153,7 @@ void Kodi::connect() {
         QString answer = reply->readAll();
         if (reply->error() == QNetworkReply::NoError && answer.contains("pong")) {
             m_flagKodiOnline = true;
+            m_flagUpdateCurrentPlayer = true;
             m_pollingTimer->setInterval(2000);
             QObject::connect(m_pollingTimer, &QTimer::timeout, this, &Kodi::onPollingTimerTimeout);
 
@@ -164,8 +165,6 @@ void Kodi::connect() {
                 QObject::connect(m_tcpSocketKodiEventServer, &QTcpSocket::readyRead, this, &Kodi::readTcpData);
                 QObject::connect(m_tcpSocketKodiEventServer, &QTcpSocket::disconnected, this,
                                  &Kodi::clientDisconnected);
-
-                // QObject::connect(m_tcpSocketKodiEventServer, SIGNAL(stateChanged()), SLOT(checkTCPSocket()));
                 m_flagKodiEventServerOnline = true;
             } else {
                 m_flagKodiEventServerOnline = false;
@@ -198,7 +197,6 @@ void Kodi::connect() {
         if (!reply->error()) {
             qCDebug(m_logCategory) << "tvheadend configured";
             m_flagTVHeadendOnline = true;
-            m_flagUpdateCurrentPlayer = true;
             // getTVEPGfromTVHeadend();
             m_pollingEPGLoadTimer->setInterval(3000);
             QObject::connect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
@@ -1039,6 +1037,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
                                  if (rUrl == "sendCommand") {
                                      if (map.contains("result")) {
                                          if (map.value("result") == "OK") {
+                                             m_flagUpdateCurrentPlayer = true;
                                              getCurrentPlayer();
                                          }
                                      }
@@ -1068,6 +1067,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
                                          m_currentkodiplayerid = -1;
                                          m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::Stopped;
                                          clearMediaPlayerEntity();
+                                         m_flagUpdateCurrentPlayer = true;
                                          getCurrentPlayer();
                                      }
                                  }
@@ -1088,6 +1088,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
                                      if (map.contains("result")) {
                                          if (map.value("result") == "OK") {
                                              m_progressBarTimer->stop();
+                                             m_flagUpdateCurrentPlayer = true;
                                              getCurrentPlayer();
                                          }
                                      }
@@ -1111,6 +1112,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
                                      if (map.contains("result")) {
                                          if (map.value("result") == "OK") {
                                              m_progressBarTimer->stop();
+                                             m_flagUpdateCurrentPlayer = true;
                                              getCurrentPlayer();
                                          }
                                      }
@@ -1574,7 +1576,7 @@ bool Kodi::read(QMap<QString, int>& map) {
     QFile   myFile(path + filename);
     // QMap<int, QString> map;
     QDataStream in(&myFile);
-    in.setVersion(QDataStream::Qt_5_3);
+    in.setVersion(QDataStream::Qt_5_12);
 
     if (!myFile.open(QIODevice::ReadOnly)) {
         qCDebug(m_logCategory) << "Could not read the file:" << filename << "Error string:" << myFile.errorString();

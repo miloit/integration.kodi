@@ -123,9 +123,9 @@ class Kodi : public Integration {
 
  private:
     QString fixUrl(QString url);
-    bool read(QMap<int, QString> &map);
+    bool read(QMap<int, QString>& map);
     bool write(QMap<int, QString> map);
-    bool read(QMap<QString, int> &map);
+    bool read(QMap<QString, int>& map);
     bool write(QMap<QString, int> map);
 
  private:
