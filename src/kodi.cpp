@@ -24,7 +24,10 @@
 
 #include "kodi.h"
 
+#include <QDataStream>
 #include <QDate>
+#include <QDir>
+#include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -33,8 +36,6 @@
 #include <QTextCodec>
 #include <QUrlQuery>
 #include <QXmlStreamReader>
-#include <QFile>
-#include <QDataStream>
 
 KodiPlugin::KodiPlugin() : Plugin("yio.plugin.kodi", USE_WORKER_THREAD) {}
 
@@ -313,8 +314,6 @@ void Kodi::disconnect() {
         QObject::disconnect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
     }
 
-
-
     QObject::disconnect(this, &Kodi::requestReadygetCurrentPlayer, 0, 0);
 
     if (m_flagKodiEventServerOnline) {
@@ -379,13 +378,13 @@ void Kodi::getTVEPGfromTVHeadend() {
         //}
         m_currentEPGchannelToLoad++;
         QString z = m_mapKodiChannelNumberToTVHeadendUUID.value(m_currentEPGchannelToLoad);
-        qCDebug(m_logCategory) << "z" <<z;
-if (m_epgChannelList.contains(m_currentEPGchannelToLoad)) {
-        tvheadendGetRequest(
-            "/api/epg/events/grid",
-            {{"limit", "2000"}, {"channel", m_mapKodiChannelNumberToTVHeadendUUID.value(m_currentEPGchannelToLoad)}},
-            "getTVEPGfromTVHeadend");
-}
+        qCDebug(m_logCategory) << "z" << z;
+        if (m_epgChannelList.contains(m_currentEPGchannelToLoad)) {
+            tvheadendGetRequest("/api/epg/events/grid",
+                                {{"limit", "2000"},
+                                 {"channel", m_mapKodiChannelNumberToTVHeadendUUID.value(m_currentEPGchannelToLoad)}},
+                                "getTVEPGfromTVHeadend");
+        }
     }
 }
 void Kodi::getSingleTVChannelList(QString param) {
@@ -606,46 +605,46 @@ void Kodi::getSingleTVChannelList(QString param) {
 void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
     QObject* context_getKodiChannelNumberToTVHeadendUUIDMapping = new QObject(this);
     QString  jsonstring;
-    QObject::connect(this, &Kodi::requestReadygetKodiChannelNumberToTVHeadendUUIDMapping,
-                     context_getKodiChannelNumberToTVHeadendUUIDMapping,
-                     [=](const QString& repliedString, const QString& requestFunction) {
-                         if (requestFunction == "getKodiChannelNumberToTVHeadendUUIDMapping") {
-                             QJsonParseError parseerror;
-                             QList<QVariant> mapOfEntries;
-                             QJsonDocument   doc = QJsonDocument::fromJson(repliedString.toUtf8(), &parseerror);
-                             if (parseerror.error != QJsonParseError::NoError) {
-                                 qCWarning(m_logCategory) << "JSON error : " << parseerror.errorString();
-                                 return;
-                             }
-                             mapOfEntries = doc.toVariant().toMap().value("entries").toList();
-                             if (!read(m_mapKodiChannelNumberToTVHeadendUUID) || !read(m_mapTVHeadendUUIDToKodiChannelNumber)) {
-                             for (int i = 0; i < mapOfEntries.length(); i++) {
-                                 for (int j = 0; j < m_KodiTVChannelList.length(); j++) {
-                                     if (m_KodiTVChannelList[j].toMap().values().indexOf(
-                                             mapOfEntries[i].toMap().values()[1].toString()) > 0 &&
-                                             !m_mapKodiChannelNumberToTVHeadendUUID.contains(
-                                                 m_KodiTVChannelList[j].toMap().value("channelnumber").toInt())) {
-                                         m_mapKodiChannelNumberToTVHeadendUUID.insert(
-                                             m_KodiTVChannelList[j].toMap().value("channelnumber").toInt(),
-                                             mapOfEntries[i].toMap().values()[0].toString());
-                                         m_mapTVHeadendUUIDToKodiChannelNumber.insert(
-                                             mapOfEntries[i].toMap().values()[0].toString(),
-                                             m_KodiTVChannelList[j].toMap().value("channelnumber").toInt());
-                                         break;
-                                     }
-                                 }
-                             }
-                             write(m_mapKodiChannelNumberToTVHeadendUUID);
-                             write(m_mapTVHeadendUUIDToKodiChannelNumber);
-                             }
+    QObject::connect(
+        this, &Kodi::requestReadygetKodiChannelNumberToTVHeadendUUIDMapping,
+        context_getKodiChannelNumberToTVHeadendUUIDMapping,
+        [=](const QString& repliedString, const QString& requestFunction) {
+            if (requestFunction == "getKodiChannelNumberToTVHeadendUUIDMapping") {
+                QJsonParseError parseerror;
+                QList<QVariant> mapOfEntries;
+                QJsonDocument   doc = QJsonDocument::fromJson(repliedString.toUtf8(), &parseerror);
+                if (parseerror.error != QJsonParseError::NoError) {
+                    qCWarning(m_logCategory) << "JSON error : " << parseerror.errorString();
+                    return;
+                }
+                mapOfEntries = doc.toVariant().toMap().value("entries").toList();
+                if (!read(m_mapKodiChannelNumberToTVHeadendUUID) || !read(m_mapTVHeadendUUIDToKodiChannelNumber)) {
+                    for (int i = 0; i < mapOfEntries.length(); i++) {
+                        for (int j = 0; j < m_KodiTVChannelList.length(); j++) {
+                            if (m_KodiTVChannelList[j].toMap().values().indexOf(
+                                    mapOfEntries[i].toMap().values()[1].toString()) > 0 &&
+                                !m_mapKodiChannelNumberToTVHeadendUUID.contains(
+                                    m_KodiTVChannelList[j].toMap().value("channelnumber").toInt())) {
+                                m_mapKodiChannelNumberToTVHeadendUUID.insert(
+                                    m_KodiTVChannelList[j].toMap().value("channelnumber").toInt(),
+                                    mapOfEntries[i].toMap().values()[0].toString());
+                                m_mapTVHeadendUUIDToKodiChannelNumber.insert(
+                                    mapOfEntries[i].toMap().values()[0].toString(),
+                                    m_KodiTVChannelList[j].toMap().value("channelnumber").toInt());
+                                break;
+                            }
+                        }
+                    }
+                    write(m_mapKodiChannelNumberToTVHeadendUUID);
+                    write(m_mapTVHeadendUUIDToKodiChannelNumber);
+                }
 
-
-                                     QString h = "g";
-                         }
-                         QObject::disconnect(this, &Kodi::requestReadygetKodiChannelNumberToTVHeadendUUIDMapping,
-                                             context_getKodiChannelNumberToTVHeadendUUIDMapping, 0);
-                         context_getKodiChannelNumberToTVHeadendUUIDMapping->deleteLater();
-                     });
+                QString h = "g";
+            }
+            QObject::disconnect(this, &Kodi::requestReadygetKodiChannelNumberToTVHeadendUUIDMapping,
+                                context_getKodiChannelNumberToTVHeadendUUIDMapping, 0);
+            context_getKodiChannelNumberToTVHeadendUUIDMapping->deleteLater();
+        });
     //
     tvheadendGetRequest("/api/channel/list", {}, "getKodiChannelNumberToTVHeadendUUIDMapping");
 }
@@ -1013,7 +1012,6 @@ void Kodi::tvheadendGetRequest(const QString& path, const QList<QPair<QString, Q
         url.setQuery(urlQuery);
     }
 
-
     request.setUrl(url);
     QString u = request.url().toString();
     // send the get request
@@ -1024,7 +1022,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
     if (!(type == "media_player" && entityId == m_entityId)) {
         return;
     }
-    QObject*         contextsendCommand = new QObject(this);
+    QObject* contextsendCommand = new QObject(this);
     // EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
     if (command == MediaPlayerDef::C_PLAY) {
     } else if (command == MediaPlayerDef::C_PLAY_ITEM) {
@@ -1294,7 +1292,7 @@ void Kodi::onPollingEPGLoadTimerTimeout() {
     });
     int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
     qCDebug(m_logCategory) << "timez" << QString::number(temp_Timestamp);
-     if (temp_Timestamp <= 0 && m_mapKodiChannelNumberToTVHeadendUUID.count() > 0) {
+    if (temp_Timestamp <= 0 && m_mapKodiChannelNumberToTVHeadendUUID.count() > 0) {
         /*if (m_checkProcessTVHeadendAvailability.Running) {
                                                      m_checkProcessTVHeadendAvailability.start("curl", QStringList() <<
            "-s" << m_tvheadendJSONUrl);
@@ -1307,10 +1305,10 @@ void Kodi::onPollingEPGLoadTimerTimeout() {
         // query.addQueryItem("bar", "2");
         // url.setQuery(query);
         requestTVHeadend.setUrl(url);
-qCDebug(m_logCategory) << "urls" << m_tvheadendJSONUrl;
-         requestTVHeadend.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-         networkManagerTvHeadend->get(requestTVHeadend);
-     }
+        qCDebug(m_logCategory) << "urls" << m_tvheadendJSONUrl;
+        requestTVHeadend.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        networkManagerTvHeadend->get(requestTVHeadend);
+    }
 }
 void Kodi::onPollingTimerTimeout() {
     QNetworkRequest        requestKodi;
@@ -1563,18 +1561,16 @@ QString Kodi::fixUrl(QString url) {
     return url;
 }
 
-
-bool Kodi::read(QMap<QString, int> &map)
-{
-    QString filename = "/opt/yio/userdata/kodi/data1.dat";
-    QFile myFile(filename);
-    //QMap<int, QString> map;
+bool Kodi::read(QMap<QString, int>& map) {
+    QString path = "/opt/yio/userdata/kodi/";
+    QString filename = "data1.dat";
+    QFile   myFile(path + filename);
+    // QMap<int, QString> map;
     QDataStream in(&myFile);
     in.setVersion(QDataStream::Qt_5_3);
 
-    if (!myFile.open(QIODevice::ReadOnly))
-    {
-        qDebug() << "Could not read the file:" << filename << "Error string:" << myFile.errorString();
+    if (!myFile.open(QIODevice::ReadOnly)) {
+        qCDebug(m_logCategory) << "Could not read the file:" << filename << "Error string:" << myFile.errorString();
         return false;
     }
 
@@ -1582,38 +1578,45 @@ bool Kodi::read(QMap<QString, int> &map)
     return true;
 }
 
-bool Kodi::write(QMap<QString, int> map)
-{
-   QString filename = "/opt/yio/userdata/kodi/data1.dat";
-   QFile myFile(filename);
-   if (!myFile.open(QIODevice::WriteOnly))
-   {
-       qDebug() << "Could not write to file:" << filename << "Error string:" << myFile.errorString();
-       return false;
-   }
+bool Kodi::write(QMap<QString, int> map) {
+    QString path = "/opt/yio/userdata/kodi/";
+    QString filename = "data1.dat";
+    QFile   myFile(filename);
+    QDir    dir(path);
 
-   /*QMap<int, QString> map;
-   //map.insert("one", "this is 1");
-   map.insert("two", "this is 2");
-   map.insert("three", "this is 3");*/
+    if (!dir.exists()) {
+        qCDebug(m_logCategory) << "Creating " << path << "directory";
 
-   QDataStream out(&myFile);
-   out.setVersion(QDataStream::Qt_5_3);
-   out << map;
-   return true;
+        if (dir.mkpath(path)) {
+            qCDebug(m_logCategory) << path << "successfully created";
+        } else {
+            qCDebug(m_logCategory) << "error during creation of " << path;
+            return false;
+        }
+    } else {
+        qCDebug(m_logCategory) << path << " already exists";
+    }
+
+    if (!myFile.open(QIODevice::WriteOnly)) {
+        qCDebug(m_logCategory) << "Could not write to file:" << filename << "Error string:" << myFile.errorString();
+        return false;
+    }
+    QDataStream out(&myFile);
+    out.setVersion(QDataStream::Qt_5_12);
+    out << map;
+    return true;
 }
 
-bool Kodi::read(QMap<int,QString> &map)
-{
-    QString filename = "/opt/yio/userdata/kodi/data.dat";
-    QFile myFile(filename);
-    //QMap<int, QString> map;
+bool Kodi::read(QMap<int, QString>& map) {
+    QString path = "/opt/yio/userdata/kodi/";
+    QString filename = "data.dat";
+    QFile   myFile(path + filename);
+
     QDataStream in(&myFile);
     in.setVersion(QDataStream::Qt_5_12);
 
-    if (!myFile.open(QIODevice::ReadOnly))
-    {
-        qDebug() << "Could not read the file:" << filename << "Error string:" << myFile.errorString();
+    if (!myFile.open(QIODevice::ReadOnly)) {
+        qCDebug(m_logCategory) << "Could not read the file:" << filename << "Error string:" << myFile.errorString();
         return false;
     }
 
@@ -1621,23 +1624,36 @@ bool Kodi::read(QMap<int,QString> &map)
     return true;
 }
 
-bool Kodi::write(QMap<int, QString> map)
-{
-   QString filename = "/opt/yio/userdata/kodi/data.dat";
-   QFile myFile(filename);
-   if (!myFile.open(QIODevice::WriteOnly))
-   {
-       qDebug() << "Could not write to file:" << filename << "Error string:" << myFile.errorString();
-       return false;
-   }
+bool Kodi::write(QMap<int, QString> map) {
+    QString path = "/opt/yio/userdata/kodi/";
+    QString filename = "data.dat";
+    QFile   myFile(filename);
+    QDir    dir(path);
 
-   /*QMap<int, QString> map;
-   //map.insert("one", "this is 1");
-   map.insert("two", "this is 2");
-   map.insert("three", "this is 3");*/
+    if (!dir.exists()) {
+        qCDebug(m_logCategory) << "Creating " << path << "directory";
 
-   QDataStream out(&myFile);
-   out.setVersion(QDataStream::Qt_5_12);
-   out << map;
-   return true;
+        if (dir.mkpath(path)) {
+            qCDebug(m_logCategory) << path << "successfully created";
+        } else {
+            qCDebug(m_logCategory) << "error during creation of " << path;
+            return false;
+        }
+    } else {
+        qCDebug(m_logCategory) << path << " already exists";
+    }
+
+    if (!myFile.open(QIODevice::WriteOnly)) {
+        qCDebug(m_logCategory) << "Could not write to file:" << filename << "Error string:" << myFile.errorString();
+        return false;
+    }
+
+    QDataStream out(&myFile);
+    out.setVersion(QDataStream::Qt_5_12);
+    out << map;
+    return true;
+    /*QMap<int, QString> map;
+    //map.insert("one", "this is 1");
+    map.insert("two", "this is 2");
+    map.insert("three", "this is 3");*/
 }
