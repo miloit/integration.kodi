@@ -9,6 +9,7 @@
     "required": [
     	"kodiclient_url",
     	"kodiclient_port",
+    	"kodieventserver_port",
         "kodiclient_user",
         "kodiclient_password",
      	"tvheadendclient_url",
@@ -33,7 +34,7 @@
             "type": "string",
             "title": "Kodi port",
             "description": "Kodi API port from the Kodi Developer page.",
-            "default": "9090",
+            "default": "8080",
             "examples": [
                 "8080"
             ]
@@ -56,6 +57,16 @@
             "default": "",
             "examples": [
                 ""
+            ]
+        },
+        "kodieventserver_port": {
+            "$id": "#/properties/kodi5_port",
+            "type": "string",
+            "title": "Kodi Eventserver port",
+            "description": "Kodi event server port from the Kodi Developer page.",
+            "default": "9090",
+            "examples": [
+                "9090"
             ]
         },
         "tvheadendclient_url": {

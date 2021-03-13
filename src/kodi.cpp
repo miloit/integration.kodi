@@ -68,6 +68,19 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
                     m_kodiJSONRPCUrl.setPassword(password);
                 }
             }
+            host = map.value("kodiclient_url").toString();
+            port = map.value("kodieventserver_port").toInt();
+            if (!host.isEmpty()) {
+                m_kodiEventServerUrl.setScheme("http");
+                m_kodiEventServerUrl.setHost(host);
+                m_kodiEventServerUrl.setPort(port);
+
+                QString password = map.value("kodiclient_password").toString();
+                if (!password.isEmpty()) {
+                    m_kodiEventServerUrl.setUserName(map.value("kodiclient_user").toString());
+                    m_kodiEventServerUrl.setPassword(password);
+                }
+            }
 
             // TODO(milo) combine host & port configuration into tvheadendclient_url?
             host = map.value("tvheadendclient_url").toString();
@@ -160,7 +173,7 @@ void Kodi::connect() {
             m_progressBarTimer->setInterval(1000);
             QObject::connect(m_progressBarTimer, &QTimer::timeout, this, &Kodi::onProgressBarTimerTimeout);
             m_tcpSocketKodiEventServer = new QTcpSocket(this);
-            m_tcpSocketKodiEventServer->connectToHost(m_kodiJSONRPCUrl.host(), 9090);
+            m_tcpSocketKodiEventServer->connectToHost(m_kodiEventServerUrl.host(), m_kodiEventServerUrl.port());
             if (m_tcpSocketKodiEventServer->waitForConnected()) {
                 QObject::connect(m_tcpSocketKodiEventServer, &QTcpSocket::readyRead, this, &Kodi::readTcpData);
                 QObject::connect(m_tcpSocketKodiEventServer, &QTcpSocket::disconnected, this,
