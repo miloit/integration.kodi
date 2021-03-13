@@ -278,7 +278,6 @@ void Kodi::clearMediaPlayerEntity() {
     entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, "");
     // get the artist
     entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, "");
-    entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, "");
     entity->updateAttrByIndex(MediaPlayerDef::MEDIAIMAGE, "");
     entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::States::IDLE);
 }
