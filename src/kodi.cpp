@@ -636,7 +636,7 @@ void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
                     return;
                 }
                 mapOfEntries = doc.toVariant().toMap().value("entries").toList();
-                if (!read(m_mapKodiChannelNumberToTVHeadendUUID) || !read(m_mapTVHeadendUUIDToKodiChannelNumber)) {
+                if (!read(&m_mapKodiChannelNumberToTVHeadendUUID) || !read(&m_mapTVHeadendUUIDToKodiChannelNumber)) {
                     for (int i = 0; i < mapOfEntries.length(); i++) {
                         for (int j = 0; j < m_KodiTVChannelList.length(); j++) {
                             if (m_KodiTVChannelList[j].toMap().values().indexOf(
@@ -1583,7 +1583,7 @@ QString Kodi::fixUrl(QString url) {
     return url;
 }
 
-bool Kodi::read(QMap<QString, int>& map) {
+bool Kodi::read(QMap<QString, int>* map) {
     QString path = "/opt/yio/userdata/kodi/";
     QString filename = "data1.dat";
     QFile   myFile(path + filename);
@@ -1596,7 +1596,7 @@ bool Kodi::read(QMap<QString, int>& map) {
         return false;
     }
 
-    in >> map;
+    in >> *map;
     return true;
 }
 
@@ -1629,7 +1629,7 @@ bool Kodi::write(QMap<QString, int> map) {
     return true;
 }
 
-bool Kodi::read(QMap<int, QString>& map) {
+bool Kodi::read(QMap<int, QString>* map) {
     QString path = "/opt/yio/userdata/kodi/";
     QString filename = "data.dat";
     QFile   myFile(path + filename);
@@ -1642,7 +1642,7 @@ bool Kodi::read(QMap<int, QString>& map) {
         return false;
     }
 
-    in >> map;
+    in >> *map;
     return true;
 }
 
