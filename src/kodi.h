@@ -137,7 +137,6 @@ class Kodi : public Integration {
     bool    m_startup = true;
     QString m_entityId;
     bool    m_flage = false;
-    bool    m_flagUpdateCurrentPlayer = true;
 
     QTimer* m_Timer;
     QTimer* m_pollingTimer;
