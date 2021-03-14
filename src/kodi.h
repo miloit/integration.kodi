@@ -90,8 +90,8 @@ class Kodi : public Integration {
 
  signals:
     // void requestReady(const QVariantMap& obj, const QString& url);
-    void requestReadygetKodiAvailableTVChannelList(const QVariantMap& object, const QString& method);
-    void requestReadygetKodiChannelNumberToTVHeadendUUIDMapping(const QString& repliedString,
+    void requestReadygetKodiAvailableTVChannelList(const QJsonDocument& object, const QString& method);
+    void requestReadygetKodiChannelNumberToTVHeadendUUIDMapping(const QJsonDocument& object,
                                                                 const QString& requestFunction);
     void requestReadygetTVEPGfromTVHeadend(const QString& repliedString, const QString& requestFunction);
     void requestReadygetSingleTVChannelList(const QString& repliedString, const QString& requestFunction);
