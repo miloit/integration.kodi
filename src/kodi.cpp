@@ -629,8 +629,8 @@ void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
         [=](const QJsonDocument& repliedJsonDocument, const QString& requestFunction) {
             if (requestFunction == "getKodiChannelNumberToTVHeadendUUIDMapping") {
                 if (!read(&m_mapKodiChannelNumberToTVHeadendUUID) || !read(&m_mapTVHeadendUUIDToKodiChannelNumber)) {
+                    auto entries = repliedJsonDocument["entries"];
                     for (int j = 0; j < m_KodiTVChannelList.length(); j++) {
-                        auto entries = repliedJsonDocument["entries"];
                         for (auto entry : entries.toArray()) {
                             auto     obj = entry.toObject();
                             if (obj["val"].toString() == m_KodiTVChannelList[j].toMap().values("label")[0].toString() &&
