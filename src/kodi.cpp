@@ -633,7 +633,6 @@ void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
                         auto entries = repliedJsonDocument["entries"];
                         for (auto entry : entries.toArray()) {
                             auto     obj = entry.toObject();
-                            QVariant temp = m_KodiTVChannelList[j].toMap().values("label")[0].toString();
                             if (obj["val"].toString() == m_KodiTVChannelList[j].toMap().values("label")[0].toString() &&
                                 !m_mapKodiChannelNumberToTVHeadendUUID.contains(
                                     m_KodiTVChannelList[j].toMap().value("channelnumber").toInt()) &&
