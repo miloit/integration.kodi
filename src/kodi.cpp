@@ -748,20 +748,19 @@ void Kodi::getCurrentPlayer() {
 
     QObject::connect(
         this, &Kodi::requestReadygetCurrentPlayer, contextgetCurrentPlayer,
-        [=](const QVariantMap& map, const QString& rMethod) {
+        [=](const QJsonDocument& resultJSONDocument, const QString& rMethod) {
             EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
             if (rMethod == "Player.GetActivePlayers") {
                 if (entity) {
-                    if (map.contains("result")) {
-                        if (map.value("result").toList().count() != 0) {
-                            QString jsonstring;
+                    if (resultJSONDocument.object().contains("result")) {
+                        if (resultJSONDocument.object()["result"].toArray().count() != 0) {
                             m_currentkodiplayerid =
-                                map.value("result").toList().value(0).toMap().value("playerid").toInt();
+                                resultJSONDocument.object()["result"].toArray()[0].toObject()["playerid"].toInt();
                             if (m_currentkodiplayerid > 0) {
                                 m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetItem;
                             }
                             m_currentkodiplayertype =
-                                map.value("result").toList().value(0).toMap().value("type").toString();
+                                resultJSONDocument.object()["result"].toArray()[0].toObject()["type"].toString();
                             // m_flag = false;
                         } else {
                             // m_flag = false;
@@ -771,71 +770,105 @@ void Kodi::getCurrentPlayer() {
                     }
                 }
             } else if (rMethod == "Player.GetItem") {
-                if (map.contains("result")) {
-                    if (map.value("result").toMap().value("item").toMap().contains("type")) {
-                        if (map.value("result").toMap().value("item").toMap().value("type") == "channel") {
-                            if (map.value("result").toMap().value("item").toMap().value("title").toString() ==
+                if (resultJSONDocument.object().contains("result")) {
+                    if (resultJSONDocument.object().value("result")["item"].toVariant().toMap().contains("type")) {
+                        if (resultJSONDocument.object().value("result")["item"]["type"].toString() == "channel") {
+                            if (resultJSONDocument.object().value("result")["item"]["title"].toString() ==
                                 m_KodiCurrentPlayerTitle) {
                                 // m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
                                 // m_flag = false;
                             } else {
-                                QVariant fanart = map.value("result").toMap().value("item").toMap().value("fanart");
-                                QVariant id = map.value("result").toMap().value("item").toMap().value("id");
-                                QVariant label = map.value("result").toMap().value("item").toMap().value("label");
-                                QVariant title = map.value("result").toMap().value("item").toMap().value("title");
-                                m_KodiCurrentPlayerTitle = title.toString();
-                                QVariant type = map.value("result").toMap().value("item").toMap().value("type");
-                                m_currentKodiMediaType = type.toString();
+                                QString fanart = resultJSONDocument.object().value("result")["item"]["type"].toString();
+                                QString id = resultJSONDocument.object().value("result")["item"]["id"].toString();
+                                QString label = resultJSONDocument.object().value("result")["item"]["label"].toString();
+                                QString title = resultJSONDocument.object().value("result")["item"]["title"].toString();
+                                m_KodiCurrentPlayerTitle = title;
+                                QString type = resultJSONDocument.object().value("result")["item"]["type"].toString();
+                                m_currentKodiMediaType = type;
                                 entity->updateAttrByIndex(MediaPlayerDef::MEDIATYPE, type);
                                 // get the track title
-                                entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, title.toString());
+                                entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, title);
                                 // get the artist
-                                entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, label.toString());
+                                entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, label);
                                 entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::PLAYING);
-                                if (!map.value("result")
-                                         .toMap()
-                                         .value("item")
-                                         .toMap()
-                                         .value("thumbnail")
+                                if (!resultJSONDocument.object()
+                                         .value("result")["item"]["thumbnail"]
                                          .toString()
                                          .isEmpty()) {
                                     m_KodiCurrentPlayerThumbnail =
-                                        map.value("result").toMap().value("item").toMap().value("thumbnail").toString();
+                                        resultJSONDocument.object().value("result")["item"]["thumbnail"].toString();
                                     m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::PrepareDownload;
-                                } else {
-                                    m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetProperties;
-                                }
-                                // m_flag = false;
-                            }
-                        } else if (map.value("result").toMap().value("item").toMap().value("type") == "unknown") {
-                            if (map.value("result").toMap().value("item").toMap().value("title").toString() ==
-                                m_KodiCurrentPlayerTitle) {
-                                m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
-                                // m_flag = false;
-                            } else {
-                                QString  jsonstring;
-                                QVariant fanart = "";
-                                QVariant id = map.value("result").toMap().value("item").toMap().value("tvshowid");
-                                QVariant label = map.value("result").toMap().value("item").toMap().value("label");
-                                QVariant title = map.value("result").toMap().value("item").toMap().value("title");
-                                QVariant type = map.value("result").toMap().value("item").toMap().value("type");
-                                m_currentKodiMediaType = type.toString();
-                                entity->updateAttrByIndex(MediaPlayerDef::MEDIATYPE, type);
-                                // get the track title
-                                entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, title.toString());
-                                // get the artist
-                                entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, label.toString());
-                                // entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::PLAYING);
-                                if (!map.value("result")
-                                         .toMap()
-                                         .value("item")
-                                         .toMap()
-                                         .value("thumbnail")
-                                         .toString()
-                                         .isEmpty()) {
-                                    m_KodiCurrentPlayerThumbnail =
-                                        map.value("result").toMap().value("item").toMap().value("thumbnail").toString();
-                                    m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::PrepareDownload;
+
+                                    /*if (map.value("result").toMap().value("item").toMap().contains("type")) {
+                                        if (map.value("result").toMap().value("item").toMap().value("type") ==
+                                       "channel") { if
+                                       (map.value("result").toMap().value("item").toMap().value("title").toString() ==
+                                                m_KodiCurrentPlayerTitle) {
+                                                // m_KodiGetCurrentPlayerState =
+                                       KodiGetCurrentPlayerState::GetActivePlayers;
+                                                // m_flag = false;
+                                            } else {
+                                                QVariant fanart =
+                                       map.value("result").toMap().value("item").toMap().value("fanart"); QVariant id =
+                                       map.value("result").toMap().value("item").toMap().value("id"); QVariant label =
+                                       map.value("result").toMap().value("item").toMap().value("label"); QVariant title
+                                       = map.value("result").toMap().value("item").toMap().value("title");
+                                                m_KodiCurrentPlayerTitle = title.toString();
+                                                QVariant type =
+                                       map.value("result").toMap().value("item").toMap().value("type");
+                                                m_currentKodiMediaType = type.toString();
+                                                entity->updateAttrByIndex(MediaPlayerDef::MEDIATYPE, type);
+                                                // get the track title
+                                                entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, title.toString());
+                                                // get the artist
+                                                entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST,
+                                       label.toString()); entity->updateAttrByIndex(MediaPlayerDef::STATE,
+                                       MediaPlayerDef::PLAYING); if (!map.value("result") .toMap() .value("item")
+                                                         .toMap()
+                                                         .value("thumbnail")
+                                                         .toString()
+                                                         .isEmpty()) {
+                                                    m_KodiCurrentPlayerThumbnail =
+                                                        map.value("result").toMap().value("item").toMap().value("thumbnail").toString();
+                                                    m_KodiGetCurrentPlayerState =
+                                       KodiGetCurrentPlayerState::PrepareDownload; } else { m_KodiGetCurrentPlayerState
+                                       = KodiGetCurrentPlayerState::GetProperties;
+                                                }
+                                                // m_flag = false;
+                                            }
+                                        } else if (map.value("result").toMap().value("item").toMap().value("type") ==
+                                       "unknown") { if
+                                       (map.value("result").toMap().value("item").toMap().value("title").toString() ==
+                                                m_KodiCurrentPlayerTitle) {
+                                                m_KodiGetCurrentPlayerState =
+                                       KodiGetCurrentPlayerState::GetActivePlayers;
+                                                // m_flag = false;
+                                            } else {
+                                                QString  jsonstring;
+                                                QVariant fanart = "";
+                                                QVariant id =
+                                       map.value("result").toMap().value("item").toMap().value("tvshowid"); QVariant
+                                       label = map.value("result").toMap().value("item").toMap().value("label");
+                                                QVariant title =
+                                       map.value("result").toMap().value("item").toMap().value("title"); QVariant type =
+                                       map.value("result").toMap().value("item").toMap().value("type");
+                                                m_currentKodiMediaType = type.toString();
+                                                entity->updateAttrByIndex(MediaPlayerDef::MEDIATYPE, type);
+                                                // get the track title
+                                                entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, title.toString());
+                                                // get the artist
+                                                entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST,
+                                       label.toString());
+                                                // entity->updateAttrByIndex(MediaPlayerDef::STATE,
+                                       MediaPlayerDef::PLAYING); if (!map.value("result") .toMap() .value("item")
+                                                         .toMap()
+                                                         .value("thumbnail")
+                                                         .toString()
+                                                         .isEmpty()) {
+                                                    m_KodiCurrentPlayerThumbnail =
+                                                        map.value("result").toMap().value("item").toMap().value("thumbnail").toString();
+                                                    m_KodiGetCurrentPlayerState =
+                                       KodiGetCurrentPlayerState::PrepareDownload;*/
                                 } else {
                                     m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetProperties;
                                 }
@@ -855,16 +888,16 @@ void Kodi::getCurrentPlayer() {
                 }
             } else if (rMethod == "Files.PrepareDownload") {
                 m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetProperties;
-                if (map.contains("result")) {
-                    if (map.value("result").toMap().value("protocol") == "http" &&
-                        map.value("result").toMap().value("mode") == "redirect") {
+                if (resultJSONDocument.object().contains("result")) {
+                    if (resultJSONDocument.object().value("result")["protocol"].toString() == "http" &&
+                        resultJSONDocument.object().value("result")["mode"].toString() == "redirect") {
                         entity->updateAttrByIndex(
                             MediaPlayerDef::MEDIAIMAGE,
                             QString("%1://%2:%3/%4")
                                 .arg(m_kodiJSONRPCUrl.scheme(), m_kodiJSONRPCUrl.host())
                                 .arg(m_kodiJSONRPCUrl.port())
-                                .arg(map.value("result").toMap().value("details").toMap().value("path").toString()));
-                        // m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetProperties;
+                                .arg(resultJSONDocument.object().value("result")["details"]["path"].toString()));
+                        m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetProperties;
                         // m_flag = false;
                     } else {
                         // m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetProperties;
@@ -875,31 +908,30 @@ void Kodi::getCurrentPlayer() {
                     // m_flag = false;
                 }
             } else if (rMethod == "Player.GetProperties") {
-                if (map.contains("result")) {
+                if (resultJSONDocument.object().contains("result")) {
                     m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
 
-                    if (map.value("result").toMap().contains("totaltime")) {
-                        int hours = map.value("result").toMap().value("totaltime").toMap().value("hours").toInt();
+                    if (resultJSONDocument.object().value("result").toVariant().toMap().contains("totaltime")) {
+                        int hours = resultJSONDocument.object().value("result")["totaltime"]["hours"].toInt();
                         int milliseconds =
-                            map.value("result").toMap().value("totaltime").toMap().value("milliseconds").toInt();
-                        int minutes = map.value("result").toMap().value("totaltime").toMap().value("minutes").toInt();
-                        int seconds = map.value("result").toMap().value("totaltime").toMap().value("seconds").toInt();
+                            resultJSONDocument.object().value("result")["totaltime"]["milliseconds"].toInt();
+                        int minutes = resultJSONDocument.object().value("result")["totaltime"]["minutes"].toInt();
+                        int seconds = resultJSONDocument.object().value("result")["totaltime"]["seconds"].toInt();
                         int totalmilliseconds = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) + milliseconds;
                         entity->updateAttrByIndex(MediaPlayerDef::MEDIADURATION, totalmilliseconds / 1000);
                         // entity->updateAttrByIndex(MediaPlayerDef::MEDIAPROGRESS, totalmilliseconds/1000);
                     }
-                    if (map.value("result").toMap().contains("time")) {
-                        int hours = map.value("result").toMap().value("time").toMap().value("hours").toInt();
-                        int milliseconds =
-                            map.value("result").toMap().value("time").toMap().value("milliseconds").toInt();
-                        int minutes = map.value("result").toMap().value("time").toMap().value("minutes").toInt();
-                        int seconds = map.value("result").toMap().value("time").toMap().value("seconds").toInt();
+                    if (resultJSONDocument.object().value("result").toVariant().toMap().contains("time")) {
+                        int hours = resultJSONDocument.object().value("result")["time"]["hours"].toInt();
+                        int milliseconds = resultJSONDocument.object().value("result")["time"]["milliseconds"].toInt();
+                        int minutes = resultJSONDocument.object().value("result")["time"]["minutes"].toInt();
+                        int seconds = resultJSONDocument.object().value("result")["time"]["seconds"].toInt();
                         int totalmilliseconds = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) + milliseconds;
                         entity->updateAttrByIndex(MediaPlayerDef::MEDIAPROGRESS, totalmilliseconds / 1000);
                         m_progressBarPosition = totalmilliseconds / 1000;
                     }
-                    if (map.value("result").toMap().contains("speed")) {
-                        if (map.value("result").toMap().value("speed").toInt() > 0) {
+                    if (resultJSONDocument.object().value("result").toVariant().toMap().contains("speed")) {
+                        if (resultJSONDocument.object().value("result")["speed"].toInt() > 0) {
                             m_progressBarTimer->stop();
                             m_progressBarTimer->start();
                             entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::PLAYING);
@@ -1190,7 +1222,7 @@ void Kodi::postRequest(const QString& callFunction, const int& requestid) {
             map = doc.toVariant().toMap();
             if (callFunction == "Player.GetActivePlayers" || callFunction == "Player.GetItem" ||
                 callFunction == "Player.GetProperties" || callFunction == "Files.PrepareDownload") {
-                emit requestReadygetCurrentPlayer(map, callFunction);
+                emit requestReadygetCurrentPlayer(doc, callFunction);
             } else {
                 qCWarning(m_logCategory) << "no callback function defined for " << callFunction;
             }
@@ -1264,7 +1296,7 @@ void Kodi::postRequest(const QString& callfunction, const QString& param) {
                        callfunction == "Player.GetProperties" || callfunction == "Files.PrepareDownload") {
                 // QJsonObject obj1Data = rootObject["result"].toObject();
                 // QVariant arrayData = obj1Data["item"].toVariant();
-                emit requestReadygetCurrentPlayer(map, callfunction);
+                emit requestReadygetCurrentPlayer(doc, callfunction);
             } else {
                 qCWarning(m_logCategory) << "no callback function defined for " << callfunction;
             }

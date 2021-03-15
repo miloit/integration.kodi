@@ -97,7 +97,7 @@ class Kodi : public Integration {
     void requestReadygetSingleTVChannelList(const QString& repliedString, const QString& requestFunction);
     void requestReadygetCompleteTVChannelList(const QVariantMap& obj, const QString& requestFunction);
     // void requestReadyt(const QVariantMap& obj, const QString& url);
-    void requestReadygetCurrentPlayer(const QVariantMap& obj, const QString& url);
+    void requestReadygetCurrentPlayer(const QJsonDocument& doc, const QString& url);
     void requestReadyCommandPlay(const QVariantMap& obj, const QString& url);
     void requestReadyCommandPause(const QVariantMap& obj, const QString& url);
     void requestReadyCommandNext(const QVariantMap& obj, const QString& url);
