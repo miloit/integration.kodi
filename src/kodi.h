@@ -94,7 +94,7 @@ class Kodi : public Integration {
     void requestReadygetKodiChannelNumberToTVHeadendUUIDMapping(const QJsonDocument& object,
                                                                 const QString&       requestFunction);
     void requestReadygetTVEPGfromTVHeadend(const QString& repliedString, const QString& requestFunction);
-    void requestReadygetSingleTVChannelList(const QString& repliedString, const QString& requestFunction);
+    void requestReadygetSingleTVChannelList(const QJsonDocument& doc, const QString& requestFunction);
     void requestReadygetCompleteTVChannelList(const QJsonDocument& doc, const QString& requestFunction);
     // void requestReadyt(const QVariantMap& obj, const QString& url);
     void requestReadygetCurrentPlayer(const QJsonDocument& doc, const QString& url);
