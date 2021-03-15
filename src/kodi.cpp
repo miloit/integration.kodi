@@ -771,7 +771,7 @@ void Kodi::getCurrentPlayer() {
                 }
             } else if (rMethod == "Player.GetItem") {
                 if (resultJSONDocument.object().contains("result")) {
-                    if (resultJSONDocument.object().value("result")["item"].toVariant().toMap().contains("type")) {
+                    if (resultJSONDocument.object().value("result")["item"].toObject().contains("type")) {
                         if (resultJSONDocument.object().value("result")["item"]["type"].toString() == "channel") {
                             if (resultJSONDocument.object().value("result")["item"]["title"].toString() ==
                                 m_KodiCurrentPlayerTitle) {
@@ -910,8 +910,7 @@ void Kodi::getCurrentPlayer() {
             } else if (rMethod == "Player.GetProperties") {
                 if (resultJSONDocument.object().contains("result")) {
                     m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
-
-                    if (resultJSONDocument.object().value("result").toVariant().toMap().contains("totaltime")) {
+                    if (resultJSONDocument.object().value("result").toObject().contains("totaltime")) {
                         int hours = resultJSONDocument.object().value("result")["totaltime"]["hours"].toInt();
                         int milliseconds =
                             resultJSONDocument.object().value("result")["totaltime"]["milliseconds"].toInt();
@@ -921,7 +920,7 @@ void Kodi::getCurrentPlayer() {
                         entity->updateAttrByIndex(MediaPlayerDef::MEDIADURATION, totalmilliseconds / 1000);
                         // entity->updateAttrByIndex(MediaPlayerDef::MEDIAPROGRESS, totalmilliseconds/1000);
                     }
-                    if (resultJSONDocument.object().value("result").toVariant().toMap().contains("time")) {
+                    if (resultJSONDocument.object().value("result").toObject().contains("time")) {
                         int hours = resultJSONDocument.object().value("result")["time"]["hours"].toInt();
                         int milliseconds = resultJSONDocument.object().value("result")["time"]["milliseconds"].toInt();
                         int minutes = resultJSONDocument.object().value("result")["time"]["minutes"].toInt();
@@ -930,7 +929,7 @@ void Kodi::getCurrentPlayer() {
                         entity->updateAttrByIndex(MediaPlayerDef::MEDIAPROGRESS, totalmilliseconds / 1000);
                         m_progressBarPosition = totalmilliseconds / 1000;
                     }
-                    if (resultJSONDocument.object().value("result").toVariant().toMap().contains("speed")) {
+                    if (resultJSONDocument.object().value("result").toObject().contains("speed")) {
                         if (resultJSONDocument.object().value("result")["speed"].toInt() > 0) {
                             m_progressBarTimer->stop();
                             m_progressBarTimer->start();
