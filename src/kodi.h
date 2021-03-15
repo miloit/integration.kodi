@@ -92,16 +92,16 @@ class Kodi : public Integration {
     // void requestReady(const QVariantMap& obj, const QString& url);
     void requestReadygetKodiAvailableTVChannelList(const QJsonDocument& object, const QString& method);
     void requestReadygetKodiChannelNumberToTVHeadendUUIDMapping(const QJsonDocument& object,
-                                                                const QString& requestFunction);
+                                                                const QString&       requestFunction);
     void requestReadygetTVEPGfromTVHeadend(const QString& repliedString, const QString& requestFunction);
     void requestReadygetSingleTVChannelList(const QString& repliedString, const QString& requestFunction);
-    void requestReadygetCompleteTVChannelList(const QVariantMap& obj, const QString& requestFunction);
+    void requestReadygetCompleteTVChannelList(const QJsonDocument& doc, const QString& requestFunction);
     // void requestReadyt(const QVariantMap& obj, const QString& url);
     void requestReadygetCurrentPlayer(const QJsonDocument& doc, const QString& url);
-    void requestReadyCommandPlay(const QVariantMap& obj, const QString& url);
-    void requestReadyCommandPause(const QVariantMap& obj, const QString& url);
-    void requestReadyCommandNext(const QVariantMap& obj, const QString& url);
-    void requestReadyCommandPrevious(const QVariantMap& obj, const QString& url);
+    void requestReadyCommandPlay(const QJsonDocument& doc, const QString& url);
+    void requestReadyCommandPause(const QJsonDocument& doc, const QString& url);
+    void requestReadyCommandNext(const QJsonDocument& doc, const QString& url);
+    void requestReadyCommandPrevious(const QJsonDocument& doc, const QString& url);
 
     // void requestReadyoiu(const QVariantMap& obj, const QString& url);
     // void requestReadyParser(const QJsonDocument& doc, const QString& url);
@@ -123,10 +123,10 @@ class Kodi : public Integration {
 
  private:
     QString fixUrl(QString url);
-    bool read(QMap<int, QString>* map);
-    bool write(QMap<int, QString> map);
-    bool read(QMap<QString, int>* map);
-    bool write(QMap<QString, int> map);
+    bool    read(QMap<int, QString>* map);
+    bool    write(QMap<int, QString> map);
+    bool    read(QMap<QString, int>* map);
+    bool    write(QMap<QString, int> map);
 
  private:
     bool    m_flagTVHeadendConfigured = false;
