@@ -629,22 +629,23 @@ void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
         [=](const QJsonDocument& repliedJsonDocument, const QString& requestFunction) {
             if (requestFunction == "getKodiChannelNumberToTVHeadendUUIDMapping") {
                 if (!read(&m_mapKodiChannelNumberToTVHeadendUUID) || !read(&m_mapTVHeadendUUIDToKodiChannelNumber)) {
-                    auto entries = repliedJsonDocument["entries"];
+                    QMap<QString, QString> inv_map;
+                    auto                   entries = repliedJsonDocument["entries"];
+                    for (auto item : entries.toArray()) {
+                        auto obj = item.toObject();
+                        inv_map[obj["val"].toString()] = obj["key"].toString();
+                    }
+
                     for (int j = 0; j < m_KodiTVChannelList.length(); j++) {
-                        for (auto entry : entries.toArray()) {
-                            auto     obj = entry.toObject();
-                            if (obj["val"].toString() == m_KodiTVChannelList[j].toMap().values("label")[0].toString() &&
-                                !m_mapKodiChannelNumberToTVHeadendUUID.contains(
-                                    m_KodiTVChannelList[j].toMap().value("channelnumber").toInt()) &&
-                                !m_mapTVHeadendUUIDToKodiChannelNumber.contains(obj["key"].toString())) {
-                                m_mapKodiChannelNumberToTVHeadendUUID.insert(
-                                    m_KodiTVChannelList[j].toMap().value("channelnumber").toInt(),
-                                    obj["key"].toString());
-                                m_mapTVHeadendUUIDToKodiChannelNumber.insert(
-                                    obj["key"].toString(),
-                                    m_KodiTVChannelList[j].toMap().value("channelnumber").toInt());
-                                break;
-                            }
+                        auto it = inv_map.find(m_KodiTVChannelList[j].toMap().values("label")[0].toString());
+                        if (it != inv_map.end() &&
+                            !m_mapKodiChannelNumberToTVHeadendUUID.contains(
+                                m_KodiTVChannelList[j].toMap().value("channelnumber").toInt()) &&
+                            !m_mapTVHeadendUUIDToKodiChannelNumber.contains(it.value())) {
+                            m_mapKodiChannelNumberToTVHeadendUUID.insert(
+                                m_KodiTVChannelList[j].toMap().value("channelnumber").toInt(), it.value());
+                            m_mapTVHeadendUUIDToKodiChannelNumber.insert(
+                                it.value(), m_KodiTVChannelList[j].toMap().value("channelnumber").toInt());
                         }
                     }
                     write(m_mapKodiChannelNumberToTVHeadendUUID);
