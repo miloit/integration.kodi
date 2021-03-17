@@ -542,7 +542,7 @@ void Kodi::getKodiAvailableTVChannelList() {
             if (requestFunction == "getKodiAvailableTVChannelList") {
                 if (resultJSONDocument.object().contains("result")) {
                     QString strJson(resultJSONDocument.toJson(QJsonDocument::Compact));
-                    qCDebug(m_logCategory) << strJson;
+                    // qCDebug(m_logCategory) << strJson;
                     m_KodiTVChannelList = resultJSONDocument.object().value("result")["channels"].toVariant().toList();
                     if (m_flagTVHeadendOnline) {
                         if (m_mapKodiChannelNumberToTVHeadendUUID.isEmpty()) {
@@ -630,7 +630,7 @@ void Kodi::getCurrentPlayer() {
             if (rMethod == "Player.GetActivePlayers") {
                 if (entity) {
                     QString strJson(resultJSONDocument.toJson(QJsonDocument::Compact));
-                    qCDebug(m_logCategory) << strJson;
+                    // qCDebug(m_logCategory) << strJson;
 
                     if (resultJSONDocument.object().contains("result")) {
                         if (resultJSONDocument.object()["result"].toArray().count() != 0) {
@@ -891,7 +891,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
                 "}}, \"id\": "
                 "" +
                 QString::number(m_globalKodiRequestID) + "}";
-            qCDebug(m_logCategory).noquote() << jsonstring;
+            // qCDebug(m_logCategory).noquote() << jsonstring;
             postRequest("sendCommandPlay", jsonstring);
         }
     } else if (command == MediaPlayerDef::C_QUEUE) {
@@ -1009,7 +1009,7 @@ void Kodi::postRequest(QString callfunction, const QString& param) {
             qCWarning(m_logCategory) << errorString;
         }
         QString answer = reply->readAll();
-        qCDebug(m_logCategory).noquote() << "RECEIVED:" << answer;
+        // qCDebug(m_logCategory).noquote() << "RECEIVED:" << answer;
         QVariantMap   map;
         QJsonDocument doc;
         if (answer != "") {
@@ -1017,7 +1017,7 @@ void Kodi::postRequest(QString callfunction, const QString& param) {
             QJsonParseError parseerror;
             doc = QJsonDocument::fromJson(answer.toUtf8(), &parseerror);
             QString strJson(doc.toJson(QJsonDocument::Compact));
-            qCDebug(m_logCategory) << strJson;
+            // qCDebug(m_logCategory) << strJson;
             if (parseerror.error != QJsonParseError::NoError) {
                 qCWarning(m_logCategory) << "JSON error : " << parseerror.errorString();
                 return;
@@ -1062,7 +1062,7 @@ void Kodi::postRequest(QString callfunction, const QString& param) {
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     // send the post request
-    qCDebug(m_logCategory) << "POST:" << request.url() << paramutf8;
+    // qCDebug(m_logCategory) << "POST:" << request.url() << paramutf8;
     manager->post(request, paramutf8);
 }
 
@@ -1075,8 +1075,6 @@ void Kodi::onPollingEPGLoadTimerTimeout() {
     }
 }
 void Kodi::onPollingTimerTimeout() {
-    qCDebug(m_logCategory) << "GET USERS PLAYLIST";
-
     if (m_flagKodiOnline) {
         postRequest("ConnectionCheck",
                     "{ \"jsonrpc\": \"2.0\","
@@ -1418,12 +1416,14 @@ void Kodi::kodiconnectioncheck(const QJsonDocument& resultJSONDocument, const QS
 
 void Kodi::Tvheadendconnectioncheck(const QJsonDocument& resultJSONDocument, const QString& method) {
     if (resultJSONDocument.object().contains("name")) {
-        qCDebug(m_logCategory) << "tvheadend configured";
+        // qCDebug(m_logCategory) << "tvheadend configured";
         m_flagTVHeadendOnline = true;
         // getTVEPGfromTVHeadend();
-        m_pollingEPGLoadTimer->setInterval(3000);
-        QObject::connect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
-        m_pollingEPGLoadTimer->start();
+        if (!m_pollingEPGLoadTimer->isActive()) {
+            m_pollingEPGLoadTimer->setInterval(3000);
+            QObject::connect(m_pollingEPGLoadTimer, &QTimer::timeout, this, &Kodi::onPollingEPGLoadTimerTimeout);
+            m_pollingEPGLoadTimer->start();
+        }
     } else {
         m_flagTVHeadendOnline = false;
         qCWarning(m_logCategory) << "TV Headend not reachable";

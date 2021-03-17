@@ -129,8 +129,9 @@ class Kodi : public Integration {
     bool    write(QMap<int, QString> map);
     bool    read(QMap<QString, int>* map);
     bool    write(QMap<QString, int> map);
-    void kodiconnectioncheck(const QJsonDocument& object, const QString& method);
-    void Tvheadendconnectioncheck(const QJsonDocument& object, const QString& method);
+    void    kodiconnectioncheck(const QJsonDocument& object, const QString& method);
+    void    Tvheadendconnectioncheck(const QJsonDocument& object, const QString& method);
+
  private:
     bool    m_flagTVHeadendConfigured = false;
     bool    m_flagKodiConfigured = false;
@@ -196,7 +197,7 @@ class Kodi : public Integration {
     void tvheadendGetRequest(const QString& path, const QList<QPair<QString, QString> >& queryItems,
                              const QString& method);
 
-    //void postRequest(const QString& params, const int& id);
+    // void postRequest(const QString& params, const int& id);
     void postRequest(QString function, const QString& jsonstring);
     // void postRequestthumb(const QString& url, const QString& method, const QString& jsonstring);
 };
