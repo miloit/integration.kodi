@@ -91,6 +91,8 @@ class Kodi : public Integration {
  signals:
     // void requestReady(const QVariantMap& obj, const QString& url);
     void requestReadygetKodiAvailableTVChannelList(const QJsonDocument& object, const QString& method);
+    void requestReadyKodiConnectionCheck(const QJsonDocument& object, const QString& method);
+    void requestReadyTvheadendConnectionCheck(const QJsonDocument& object, const QString& method);
     void requestReadygetKodiChannelNumberToTVHeadendUUIDMapping(const QJsonDocument& object,
                                                                 const QString&       requestFunction);
     void requestReadygetTVEPGfromTVHeadend(const QString& repliedString, const QString& requestFunction);
@@ -127,7 +129,8 @@ class Kodi : public Integration {
     bool    write(QMap<int, QString> map);
     bool    read(QMap<QString, int>* map);
     bool    write(QMap<QString, int> map);
-
+    void kodiconnectioncheck(const QJsonDocument& object, const QString& method);
+    void Tvheadendconnectioncheck(const QJsonDocument& object, const QString& method);
  private:
     bool    m_flagTVHeadendConfigured = false;
     bool    m_flagKodiConfigured = false;
@@ -169,6 +172,9 @@ class Kodi : public Integration {
     int                       m_currentEPGchannelToLoad = 0;
     bool                      m_flagLoadingEPG = false;
     QList<int> m_epgChannelList = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+    QNetworkAccessManager* networkManagerTvHeadend = new QNetworkAccessManager(this);
+    QNetworkAccessManager* networkManagerKodi = new QNetworkAccessManager(this);
+
     // Kodi API calls
     /*void search(QString query);
     void search(QString query, QString type);
@@ -190,7 +196,7 @@ class Kodi : public Integration {
     void tvheadendGetRequest(const QString& path, const QList<QPair<QString, QString> >& queryItems,
                              const QString& method);
 
-    void postRequest(const QString& params, const int& id);
-    void postRequest(const QString& function, const QString& jsonstring);
+    //void postRequest(const QString& params, const int& id);
+    void postRequest(QString function, const QString& jsonstring);
     // void postRequestthumb(const QString& url, const QString& method, const QString& jsonstring);
 };
