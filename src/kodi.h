@@ -34,7 +34,7 @@
 #include <QTimer>
 #include <QUrl>
 #include <QVariantMap>
-
+#include <QNetworkConfigurationManager>
 #include "yio-interface/entities/mediaplayerinterface.h"
 #include "yio-model/mediaplayer/epgmodel_mediaplayer.h"
 #include "yio-model/mediaplayer/searchmodel_mediaplayer.h"
@@ -90,20 +90,19 @@ class Kodi : public Integration {
 
  signals:
     // void requestReady(const QVariantMap& obj, const QString& url);
-    void requestReadygetKodiAvailableTVChannelList(const QJsonDocument& object, const QString& method);
-    void requestReadyKodiConnectionCheck(const QJsonDocument& object, const QString& method);
-    void requestReadyTvheadendConnectionCheck(const QJsonDocument& object, const QString& method);
-    void requestReadygetKodiChannelNumberToTVHeadendUUIDMapping(const QJsonDocument& object,
-                                                                const QString&       requestFunction);
-    void requestReadygetTVEPGfromTVHeadend(const QString& repliedString, const QString& requestFunction);
-    void requestReadygetSingleTVChannelList(const QJsonDocument& doc, const QString& requestFunction);
-    void requestReadygetCompleteTVChannelList(const QJsonDocument& doc, const QString& requestFunction);
+    void requestReadygetKodiAvailableTVChannelList(const QJsonDocument& object);
+    void requestReadyKodiConnectionCheck(const QJsonDocument& object);
+    void requestReadyTvheadendConnectionCheck(const QJsonDocument& object);
+    void requestReadygetKodiChannelNumberToTVHeadendUUIDMapping(const QJsonDocument& object);
+    void requestReadygetTVEPGfromTVHeadend(const QString& repliedString);
+    void requestReadygetSingleTVChannelList(const QJsonDocument& doc);
+    void requestReadygetCompleteTVChannelList(const QJsonDocument& doc);
     // void requestReadyt(const QVariantMap& obj, const QString& url);
-    void requestReadygetCurrentPlayer(const QJsonDocument& doc, const QString& url);
-    void requestReadyCommandPlay(const QJsonDocument& doc, const QString& url);
-    void requestReadyCommandPause(const QJsonDocument& doc, const QString& url);
-    void requestReadyCommandNext(const QJsonDocument& doc, const QString& url);
-    void requestReadyCommandPrevious(const QJsonDocument& doc, const QString& url);
+    void requestReadygetCurrentPlayer(const QJsonDocument& doc);
+    void requestReadyCommandPlay(const QJsonDocument& doc);
+    void requestReadyCommandPause(const QJsonDocument& doc);
+    void requestReadyCommandNext(const QJsonDocument& doc);
+    void requestReadyCommandPrevious(const QJsonDocument& doc);
 
     // void requestReadyoiu(const QVariantMap& obj, const QString& url);
     // void requestReadyParser(const QJsonDocument& doc, const QString& url);
@@ -129,8 +128,8 @@ class Kodi : public Integration {
     bool    write(QMap<int, QString> map);
     bool    read(QMap<QString, int>* map);
     bool    write(QMap<QString, int> map);
-    void    kodiconnectioncheck(const QJsonDocument& object, const QString& method);
-    void    Tvheadendconnectioncheck(const QJsonDocument& object, const QString& method);
+    void    kodiconnectioncheck(const QJsonDocument& object);
+    void    Tvheadendconnectioncheck(const QJsonDocument& object);
 
  private:
     bool    m_flagTVHeadendConfigured = false;
@@ -141,6 +140,7 @@ class Kodi : public Integration {
     bool    m_startup = true;
     QString m_entityId;
     bool    m_flage = false;
+    int     m_timer;
 
     QTimer* m_Timer;
     QTimer* m_pollingTimer;
@@ -172,10 +172,13 @@ class Kodi : public Integration {
     bool                      m_flagKodiEventServerOnline = false;
     int                       m_currentEPGchannelToLoad = 0;
     bool                      m_flagLoadingEPG = false;
+    QNetworkConfigurationManager *manager = new QNetworkConfigurationManager(this);
     QList<int> m_epgChannelList = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
     QNetworkAccessManager* networkManagerTvHeadend = new QNetworkAccessManager(this);
     QNetworkAccessManager* networkManagerKodi = new QNetworkAccessManager(this);
-
+QNetworkReply* m_reply;
+QNetworkReply* m_tvreply;
+int _tries = 0;
     // Kodi API calls
     /*void search(QString query);
     void search(QString query, QString type);
