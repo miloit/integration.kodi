@@ -291,7 +291,7 @@ void Kodi::disconnect() {
 }
 
 void Kodi::enterStandby() {
-    if (!m_reply->isFinished()) {
+    /*if (!m_reply->isFinished()) {
         m_reply->abort();
     }
 
@@ -313,11 +313,13 @@ void Kodi::enterStandby() {
         m_tcpSocketKodiEventServer->close();
     }
     m_flagKodiOnline = false;
-    m_flagTVHeadendOnline = false;
+    m_flagTVHeadendOnline = false;*/
+    disconnect();
 }
 
 void Kodi::leaveStandby() {
-    if (!m_tvheadendJSONUrl.isEmpty()) {
+    connect();
+    /*if (!m_tvheadendJSONUrl.isEmpty()) {
         m_flagTVHeadendConfigured = true;
 
         tvheadendGetRequest("/api/serverinfo", {}, "getTVHeadendConnectionCheck");
@@ -342,7 +344,7 @@ void Kodi::leaveStandby() {
             this);
         disconnect();
         qCWarning(m_logCategory) << "Kodi not configured";
-    }
+    }*/
 }
 
 void Kodi::getTVEPGfromTVHeadend() {
