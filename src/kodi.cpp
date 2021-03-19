@@ -192,7 +192,7 @@ void Kodi::connect() {
                     i->connect();
                 },
                 this);
-            // disconnect();
+            disconnect();
             qCWarning(m_logCategory) << "Kodi not configured";
         }
     }
@@ -236,7 +236,7 @@ void Kodi::readTcpData() {
             if (replyMap.value("method") == "System.OnQuit") {
                 m_flagKodiOnline = false;
                 m_flagTVHeadendOnline = false;
-                // disconnect();
+                disconnect();
             } else if (replyMap.value("method") == "Player.OnResume") {
             } else if (replyMap.value("method") == "Player.OnPlay") {
             }
@@ -285,7 +285,9 @@ void Kodi::disconnect() {
         this);
     disconnect();
     qCWarning(m_logCategory) << "Kodi not reachable";*/
-    setState(DISCONNECTED);
+    // setState(DISCONNECTED);
+    m_flagKodiOnline = false;
+    m_flagTVHeadendOnline = false;
 }
 
 void Kodi::enterStandby() {
@@ -338,7 +340,7 @@ void Kodi::leaveStandby() {
                 i->connect();
             },
             this);
-        // disconnect();
+        disconnect();
         qCWarning(m_logCategory) << "Kodi not configured";
     }
 }
@@ -1477,7 +1479,7 @@ void Kodi::kodiconnectioncheck(const QJsonDocument& resultJSONDocument) {
                     i->connect();
                 },
                 this);
-            // disconnect();
+            disconnect();
             qCWarning(m_logCategory) << "Kodi not reachable";
         }
     } else {
@@ -1489,7 +1491,7 @@ void Kodi::kodiconnectioncheck(const QJsonDocument& resultJSONDocument) {
                 i->connect();
             },
             this);
-        // disconnect();
+        disconnect();
         qCWarning(m_logCategory) << "Kodi not reachable";
     }
 }
