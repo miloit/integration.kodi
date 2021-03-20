@@ -149,19 +149,22 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
 }
 
 void Kodi::connect() {
-    if (!manager->isOnline()) {
+    do {
+        _tries++;
         if (_tries == 20) {
-            m_notifications->add(
-                true, tr("Cannot connect to ").append(friendlyName()).append("."), tr("Reconnect"),
-                [](QObject* param) {
-                    Integration* i = qobject_cast<Integration*>(param);
-                    i->connect();
-                },
-                this);
-        } else {
-            _tries++;
-            this->connect();
+            break;
         }
+    } while (!manager->isOnline());
+
+    if (!manager->isOnline()) {
+        m_notifications->add(
+            true, tr("Cannot connect to ").append(friendlyName()).append("."), tr("Reconnect"),
+            [](QObject* param) {
+                Integration* i = qobject_cast<Integration*>(param);
+                i->connect();
+            },
+            this);
+
     } else {
         QObject::connect(this, &Kodi::requestReadyKodiConnectionCheck, this, &Kodi::kodiconnectioncheck);
         QObject::connect(this, &Kodi::requestReadyTvheadendConnectionCheck, this, &Kodi::Tvheadendconnectioncheck);
@@ -245,7 +248,7 @@ void Kodi::readTcpData() {
 }
 
 void Kodi::disconnect() {
-    if (!m_reply->isFinished()) {
+    if (m_reply->isFinished()) {
         m_reply->abort();
     }
 
@@ -797,7 +800,7 @@ void Kodi::getCurrentPlayer() {
                     if (resultJSONDocument.object().value("result").toObject().contains("speed")) {
                         if (resultJSONDocument.object().value("result")["speed"].toInt() > 0) {
                             m_progressBarTimer->stop();
-                            m_progressBarTimer;
+                            m_progressBarTimer->start();
                             entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::PLAYING);
                         }
                     }
@@ -937,6 +940,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
     if (!(type == "media_player" && entityId == m_entityId)) {
         return;
     }
+    qCDebug(m_logCategory) << "Kexpressed" << command;
     QObject* contextsendCommand = new QObject(this);
     // EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
     if (command == MediaPlayerDef::C_PLAY) {
@@ -1072,14 +1076,20 @@ void Kodi::postRequest(QString callfunction, const QString& param) {
     // qCDebug(m_logCategory) << "POST:" << request.url() << paramutf8;
     m_reply = networkManagerKodi->post(request, paramutf8);
     // connect to finish signal
-    /*QObject::connect(m_reply, static_cast<void
-    (QNetworkReply::*)(QNetworkReply::NetworkError)>(&QNetworkReply::error), this, [=](){ QJsonDocument doc; emit
-    requestReadyKodiConnectionCheck(doc);
-    });*/
+    QObject::connect(m_reply, static_cast<void (QNetworkReply::*)(QNetworkReply::NetworkError)>(&QNetworkReply::error),
+                     this, [=]() {
+                         qCDebug(m_logCategory) << "1";
+                         QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
+                         qCDebug(m_logCategory) << reply->error();
+                     });
     QObject::connect(m_reply, &QNetworkReply::finished, this, [=]() {
         QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
         // QObject::connect(manager, &QNetworkAccessManager::finished, contextpostt, [=](QNetworkReply* reply) {
         QJsonDocument doc;
+
+        if (reply->error() == QNetworkReply::OperationCanceledError) {
+            qCDebug(m_logCategory) << "2";
+        }
         if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200) {
             if (reply->error()) {
                 QString errorString = reply->errorString();
