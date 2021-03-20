@@ -138,8 +138,17 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
                       << "PAUSE"
                       << "STOP"
                       << "PREVIOUS"
+                      << "UP"
+                      << "DOWN"
+                      << "OK"
+                      << "LEFT"
+                      << "RIGHT"
+                      << "BACK"
+                      << "MENU"
                       << "NEXT"
                       << "SEEK"
+                      << "CHANNEL_UP"
+                      << "CHANNEL_DOWN"
                       << "SHUFFLE"
                       << "SEARCH"
                       << "MEDIAPLAYEREPGVIEW"
@@ -175,17 +184,17 @@ void Kodi::connect() {
         if (!m_tvheadendJSONUrl.isEmpty()) {
             m_flagTVHeadendConfigured = true;
 
-            tvheadendGetRequest("/api/serverinfo", {}, "getTVHeadendConnectionCheck");
+            tvheadendGetRequest("/api/serverinfo", {});
         } else {
             qCDebug(m_logCategory) << "TVHeadend not confgured";
             m_flagTVHeadendConfigured = false;
         }
         if (!m_kodiJSONRPCUrl.isEmpty()) {
             m_flagKodiConfigured = true;
-            postRequest("ConnectionCheck",
-                        "{ \"jsonrpc\": \"2.0\","
-                        " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
-                        " \"id\":\"ConnectionCheck\"}");
+            postRequest(
+                "{ \"jsonrpc\": \"2.0\","
+                " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
+                " \"id\":\"ConnectionCheck\"}");
         } else {
             m_flagKodiConfigured = false;
             m_notifications->add(
@@ -350,44 +359,18 @@ void Kodi::leaveStandby() {
     }*/
 }
 
-void Kodi::getTVEPGfromTVHeadend() {
+void Kodi::getTVEPGfromTVHeadend(int KodiChannelNumber) {
     QObject* context_getTVEPGfromTVHeadend = new QObject(this);
     QObject::connect(this, &Kodi::requestReadygetTVEPGfromTVHeadend, context_getTVEPGfromTVHeadend,
-                     [=](const QString& answer) {
-                         QJsonParseError parseerror;
-                         QJsonDocument   doc = QJsonDocument::fromJson(answer.toUtf8(), &parseerror);
-                         if (parseerror.error != QJsonParseError::NoError) {
-                             qCWarning(m_logCategory) << "JSON error : " << parseerror.errorString();
-                             m_flagLoadingEPG = false;
-                             return;
-                         }
-
+                     [=](const QJsonDocument& resultJSONDocument) {
                          // createa a map object
-                         m_currentEPG.append(doc.toVariant().toMap().value("entries").toList());
-                         if (m_currentEPGchannelToLoad == m_mapKodiChannelNumberToTVHeadendUUID.count()) {
-                             m_EPGExpirationTimestamp =
-                                 QDateTime(QDate::currentDate()).toTime_t() + (m_tvProgrammExpireTimeInHours * 3600);
-                         }
-
+                         m_currentEPG.append(resultJSONDocument.object().value("entries").toVariant().toList());
                          context_getTVEPGfromTVHeadend->deleteLater();
-                         // QObject::disconnect(this, &Kodi::requestReadygetTVEPGfromTVHeadend,
-                         // context_getTVEPGfromTVHeadend, 0);
-                         m_flagLoadingEPG = false;
                      });
-    int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
-    if (m_flagTVHeadendOnline && temp_Timestamp <= 0 && m_mapKodiChannelNumberToTVHeadendUUID.count() > 0) {
-        /*tvheadendGetRequest("/api/epg/events/grid", { { "limit", "2000" }, "getTVEPGfromTVHeadend");*/
-
-        // }
-        m_currentEPGchannelToLoad++;
-        QString z = m_mapKodiChannelNumberToTVHeadendUUID.value(m_currentEPGchannelToLoad);
-        qCDebug(m_logCategory) << "z" << z;
-        if (m_epgChannelList.contains(m_currentEPGchannelToLoad)) {
-            tvheadendGetRequest("/api/epg/events/grid",
-                                {{"limit", "2000"},
-                                 {"channel", m_mapKodiChannelNumberToTVHeadendUUID.value(m_currentEPGchannelToLoad)}},
-                                "getTVEPGfromTVHeadend");
-        }
+    if (m_flagTVHeadendOnline && m_mapKodiChannelNumberToTVHeadendUUID.count() > 0) {
+        tvheadendGetRequest(
+            "/api/epg/events/grid",
+            {{"limit", "2000"}, {"channel", m_mapKodiChannelNumberToTVHeadendUUID.value(KodiChannelNumber)}});
     }
 }
 void Kodi::getSingleTVChannelList(QString param) {
@@ -412,51 +395,94 @@ void Kodi::getSingleTVChannelList(QString param) {
                                                  m_currentEPG[i].toMap().value("title").toString());
                     }
                 }
-                int currenttvchannelarrayid = 0;
-                for (int i = 0; i < m_KodiTVChannelList.length(); i++) {
-                    if (m_KodiTVChannelList[i].toMap().value("channelid") == param) {
-                        currenttvchannelarrayid = i;
-                        break;
+                if (currenttvprogramm.count() > 0) {
+                    int currenttvchannelarrayid = 0;
+                    for (int i = 0; i < m_KodiTVChannelList.length(); i++) {
+                        if (m_KodiTVChannelList[i].toMap().value("channelid") == param) {
+                            currenttvchannelarrayid = i;
+                            break;
+                        }
+                    }
+                    QString     id = m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("channelid").toString();
+                    QString     title = m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("label").toString();
+                    QString     subtitle = "";
+                    QString     type = "tvchannellist";
+                    QString     time = "";
+                    QString     image = fixUrl(QString::fromStdString(QByteArray::fromPercentEncoding(
+                                                                      m_KodiTVChannelList[currenttvchannelarrayid]
+                                                                          .toMap()
+                                                                          .value("thumbnail")
+                                                                          .toString()
+                                                                          .toUtf8())
+                                                                      .toStdString())
+                                               .mid(8));
+                    QStringList commands = {"PLAY"};
+
+                    BrowseTvChannelModel* tvchannel =
+                        new BrowseTvChannelModel(id, time, title, subtitle, type, image, commands, nullptr);
+
+                    for (const auto& key : currenttvprogramm.keys()) {
+                        QDateTime timestamp;
+                        timestamp.setTime_t(key.toUInt());
+
+                        tvchannel->addtvchannelItem(
+                            m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("channelid").toString(),
+                            timestamp.toString("hh:mm"), currenttvprogramm.value(key), "", "tvchannel", "", commands);
+                    }
+
+                    if (entity) {
+                        MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
+                        me->setBrowseModel(tvchannel);
+                    }
+
+                    // context_getSingleTVChannelList->deleteLater();
+                    // QObject::disconnect(this, &Kodi::requestReadygetSingleTVChannelList,
+                    // context_getSingleTVChannelList, 0);
+                } else {
+                    // EntityInterface* entity =
+                    // static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
+                    int currenttvchannelarrayid = 0;
+                    for (int i = 0; i < m_KodiTVChannelList.length(); i++) {
+                        if (m_KodiTVChannelList[i].toMap().value("channelid") == param) {
+                            // currenttvchannel = m_KodiTVChannelList[i].toMap();
+                            currenttvchannelarrayid = i;
+                            break;
+                        }
+                    }
+                    QString     id = m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("channelid").toString();
+                    QString     title = m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("label").toString();
+                    QString     subtitle = "";
+                    QString     type = "tvchannellist";
+                    QString     image = fixUrl(QString::fromStdString(QByteArray::fromPercentEncoding(
+                                                                      m_KodiTVChannelList[currenttvchannelarrayid]
+                                                                          .toMap()
+                                                                          .value("thumbnail")
+                                                                          .toString()
+                                                                          .toUtf8())
+                                                                      .toStdString())
+                                               .mid(8));
+                    QStringList commands = {};
+
+                    BrowseTvChannelModel* tvchannel =
+                        new BrowseTvChannelModel(id, "", title, subtitle, type, image, commands, nullptr);
+                    tvchannel->addtvchannelItem(
+                        m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("channelid").toString(), "",
+                        "No programm available", "", "tvchannel", "", commands);
+                    if (entity) {
+                        MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
+                        me->setBrowseModel(tvchannel);
                     }
                 }
-                QString id = m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("channelid").toString();
-                QString title = m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("label").toString();
-                QString subtitle = "";
-                QString type = "tvchannellist";
-                QString time = "";
-                QString image = fixUrl(
-                    QString::fromStdString(
-                        QByteArray::fromPercentEncoding(
-                            m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("thumbnail").toString().toUtf8())
-                            .toStdString())
-                        .mid(8));
-                QStringList commands = {"PLAY"};
 
-                BrowseTvChannelModel* tvchannel =
-                    new BrowseTvChannelModel(id, time, title, subtitle, type, image, commands, nullptr);
-
-                for (const auto& key : currenttvprogramm.keys()) {
-                    QDateTime timestamp;
-                    timestamp.setTime_t(key.toUInt());
-
-                    tvchannel->addtvchannelItem(
-                        m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("channelid").toString(),
-                        timestamp.toString("hh:mm"), currenttvprogramm.value(key), "", "tvchannel", "", commands);
-                }
-
-                if (entity) {
-                    MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
-                    me->setBrowseModel(tvchannel);
-                }
+                // }
 
                 context_getSingleTVChannelList->deleteLater();
-                // QObject::disconnect(this, &Kodi::requestReadygetSingleTVChannelList,
-                // context_getSingleTVChannelList, 0);
             });
 
-        tvheadendGetRequest("/api/epg/events/grid", {{"limit", "1"}}, "getSingleTVChannelList");
-
-    } else if (!m_flagTVHeadendOnline) {
+        postRequest(
+            "{ \"jsonrpc\": \"2.0\", \"method\": \"JSONRPC.Ping\","
+            " \"params\": {  }, \"id\": \"getSingleTVChannelList\" }");
+     /*else if (!m_flagTVHeadendOnline) {
         QObject::connect(
             this, &Kodi::requestReadygetSingleTVChannelList, context_getSingleTVChannelList,
             [=](const QJsonDocument& resultJSONDocument) {
@@ -507,9 +533,10 @@ void Kodi::getSingleTVChannelList(QString param) {
         qCDebug(m_logCategory) << "GET USERS PLAYLIST";
         QString jsonstring;
 
-        postRequest("getSingleTVChannelList",
-                    "{ \"jsonrpc\": \"2.0\", \"method\": \"JSONRPC.Ping\","
-                    " \"params\": {  }, \"id\": \"getSingleTVChannelList\" }");
+        postRequest(
+            "{ \"jsonrpc\": \"2.0\", \"method\": \"JSONRPC.Ping\","
+            " \"params\": {  }, \"id\": \"getSingleTVChannelList\" }");
+    } */
     } else {
         QObject::connect(
             this, &Kodi::requestReadygetSingleTVChannelList, context_getSingleTVChannelList,
@@ -561,10 +588,9 @@ void Kodi::getSingleTVChannelList(QString param) {
         qCDebug(m_logCategory) << "GET USERS PLAYLIST";
         QString jsonstring;
 
-        postRequest("getSingleTVChannelList",
-                    "{ \"jsonrpc\": \"2.0\", "
-                    "\"method\": \"JSONRPC.Ping\","
-                    " \"params\": {  }, \"id\": \"getSingleTVChannelList\" }");
+        postRequest(
+            "{ \"jsonrpc\": \"2.0\", \"method\": \"JSONRPC.Ping\", \"params\": {  }, \"id\": "
+            "\"getSingleTVChannelList\" }");
     }
 }
 void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
@@ -599,7 +625,7 @@ void Kodi::getKodiChannelNumberToTVHeadendUUIDMapping() {
 
             context_getKodiChannelNumberToTVHeadendUUIDMapping->deleteLater();
         });
-    tvheadendGetRequest("/api/channel/list", {}, "getKodiChannelNumberToTVHeadendUUIDMapping");
+    tvheadendGetRequest("/api/channel/list", {});
 }
 
 void Kodi::getKodiAvailableTVChannelList() {
@@ -629,7 +655,7 @@ void Kodi::getKodiAvailableTVChannelList() {
             "{\"jsonrpc\":\"2.0\",\"id\": \"getKodiAvailableTVChannelList\",\"method\":\"PVR.GetChannels\","
             " \"params\": {\"channelgroupid\": \"alltv\", \"properties\":"
             "[\"thumbnail\",\"uniqueid\",\"channelnumber\"]}}";
-        postRequest("getKodiAvailableTVChannelList", jsonstring);
+        postRequest(jsonstring);
     }
 }
 
@@ -677,10 +703,10 @@ void Kodi::getCompleteTVChannelList() {
 
     if (m_flagKodiOnline) {
         QString jsonstring;
-        postRequest("getCompleteTVChannelList",
-                    "{ \"jsonrpc\": \"2.0\","
-                    " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
-                    " \"id\":\"getCompleteTVChannelList\"}");
+        postRequest(
+            "{ \"jsonrpc\": \"2.0\","
+            " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
+            " \"id\":\"getCompleteTVChannelList\"}");
     }
 }
 
@@ -718,34 +744,39 @@ void Kodi::getCurrentPlayer() {
             } else if (resultJSONDocument.object().value("id") == "Player.GetItem") {
                 if (resultJSONDocument.object().contains("result")) {
                     if (resultJSONDocument.object().value("result")["item"].toObject().contains("type")) {
-                        if (resultJSONDocument.object().value("result")["item"]["type"].toString() == "channel") {
-                            QString fanart = resultJSONDocument.object().value("result")["item"]["type"].toString();
-                            QString id = resultJSONDocument.object().value("result")["item"]["id"].toString();
-                            QString label = resultJSONDocument.object().value("result")["item"]["label"].toString();
-                            QString title = resultJSONDocument.object().value("result")["item"]["title"].toString();
-                            m_KodiCurrentPlayerTitle = title;
-                            QString type = resultJSONDocument.object().value("result")["item"]["type"].toString();
-                            m_currentKodiMediaType = type;
-                            entity->updateAttrByIndex(MediaPlayerDef::MEDIATYPE, type);
-                            // get the track title
-                            entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, title);
-                            // get the artist
-                            entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, label);
-                            entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::PLAYING);
-                            if (!resultJSONDocument.object()
-                                     .value("result")["item"]["thumbnail"]
-                                     .toString()
-                                     .isEmpty()) {
-                                m_KodiCurrentPlayerThumbnail =
-                                    resultJSONDocument.object().value("result")["item"]["thumbnail"].toString();
-                                m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::PrepareDownload;
-                            } else {
-                                m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetProperties;
-                            }
-                            // m_flag = false;
-                        } else {
-                            // m_flag = false;
+                        if (resultJSONDocument.object().value("result")["item"]["title"].toString() ==
+                            m_KodiCurrentPlayerTitle) {
                             m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
+                        } else {
+                            if (resultJSONDocument.object().value("result")["item"]["type"].toString() == "channel") {
+                                QString fanart = resultJSONDocument.object().value("result")["item"]["type"].toString();
+                                QString id = resultJSONDocument.object().value("result")["item"]["id"].toString();
+                                QString label = resultJSONDocument.object().value("result")["item"]["label"].toString();
+                                QString title = resultJSONDocument.object().value("result")["item"]["title"].toString();
+                                m_KodiCurrentPlayerTitle = title;
+                                QString type = resultJSONDocument.object().value("result")["item"]["type"].toString();
+                                m_currentKodiMediaType = type;
+                                entity->updateAttrByIndex(MediaPlayerDef::MEDIATYPE, type);
+                                // get the track title
+                                entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, title);
+                                // get the artist
+                                entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, label);
+                                entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::PLAYING);
+                                if (!resultJSONDocument.object()
+                                         .value("result")["item"]["thumbnail"]
+                                         .toString()
+                                         .isEmpty()) {
+                                    m_KodiCurrentPlayerThumbnail =
+                                        resultJSONDocument.object().value("result")["item"]["thumbnail"].toString();
+                                    m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::PrepareDownload;
+                                } else {
+                                    m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetProperties;
+                                }
+                                // m_flag = false;
+                            } else {
+                                // m_flag = false;
+                                m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
+                            }
                         }
                     } else {
                         // m_flag = false;
@@ -818,7 +849,6 @@ void Kodi::getCurrentPlayer() {
              m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::Stopped)) {  // && !// m_flag) {
             // postRequest(method, m_globalKodiRequestID);
             postRequest(
-                method,
                 "{\"jsonrpc\": \"2.0\", \"method\": \"Player.GetActivePlayers\", \"id\":\"Player.GetActivePlayers\"}");
             // m_flag = true;
         } else if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::GetItem) {  // && !// m_flag) {
@@ -831,7 +861,7 @@ void Kodi::getCurrentPlayer() {
                     " \"streamdetails\"], \"playerid\": "
                     "" +
                     QString::number(m_currentkodiplayerid) + " }, \"id\": \"Player.GetItem\"}";
-                postRequest("Player.GetItem", jsonstring);
+                postRequest(jsonstring);
                 // m_flag = true;
             } else if (m_currentkodiplayertype == "audio") {
                 jsonstring =
@@ -841,7 +871,7 @@ void Kodi::getCurrentPlayer() {
                     "\"file\", \"fanart\", \"streamdetails\"], \"playerid\": "
                     "" +
                     QString::number(m_currentkodiplayerid) + " }, \"id\": \"Player.GetItem\"}";
-                postRequest("Player.GetItem", jsonstring);
+                postRequest(jsonstring);
                 // m_flag = true;
             }
         } else if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::GetProperties) {  // && !// m_flag) {
@@ -852,22 +882,21 @@ void Kodi::getCurrentPlayer() {
                 ", \"properties\": "
                 "[\"totaltime\", \"time\", \"speed\"] }, "
                 "\"id\": \"Player.GetProperties\"}";
-            postRequest("Player.GetProperties", jsonstring);
+            postRequest(jsonstring);
             // m_flag = true;
         } else if (m_KodiGetCurrentPlayerState == KodiGetCurrentPlayerState::PrepareDownload) {  //&& !// m_flag) {
             QString jsonstring =
                 "{\"jsonrpc\": \"2.0\", \"method\": \"Files.PrepareDownload\", "
                 "\"params\": { \"path\": \"" +
                 m_KodiCurrentPlayerThumbnail + "\" }, \"id\": \"Files.PrepareDownload\"}";
-            postRequest("Files.PrepareDownload", jsonstring);
+            postRequest(jsonstring);
             // m_flag = true;
         } else {
             // m_flag = false;
         }
     }
 }
-void Kodi::tvheadendGetRequest(const QString& path, const QList<QPair<QString, QString> >& queryItems,
-                               const QString& callFunction) {
+void Kodi::tvheadendGetRequest(const QString& path, const QList<QPair<QString, QString> >& queryItems) {
     // create new networkacces manager and request
 
     QNetworkRequest request;
@@ -915,8 +944,8 @@ void Kodi::tvheadendGetRequest(const QString& path, const QList<QPair<QString, Q
                     emit requestReadyTvheadendConnectionCheck(doc);
                 } else if (doc.object().contains("entries") && !doc.object().contains("totalCount")) {
                     emit requestReadygetKodiChannelNumberToTVHeadendUUIDMapping(doc);
-                } else if (doc.object().contains("entries") && !doc.object().contains("totalCount")) {
-                    emit requestReadygetTVEPGfromTVHeadend(answer);
+                } else if (doc.object().contains("entries") && doc.object().contains("totalCount")) {
+                    emit requestReadygetTVEPGfromTVHeadend(doc);
                 }
             } else {
                 if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 0) {
@@ -962,7 +991,147 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
                 " {\"item\":{\"channelid\": " +
                 param.toMap().value("id").toString() + "}}, \"id\": \"sendCommandPlay\"}";
             // qCDebug(m_logCategory).noquote() << jsonstring;
-            postRequest("sendCommandPlay", jsonstring);
+            postRequest(jsonstring);
+        }
+    } else if (command == MediaPlayerDef::C_UP) {
+        QObject::connect(this, &Kodi::requestReadyCommandUp, contextsendCommand,
+                         [=](const QJsonDocument& resultJSONDocument) {
+                             if (resultJSONDocument.object().contains("result")) {
+                                 if (resultJSONDocument.object().value("result") == "OK") {
+                                 } else {
+                                 }
+                             }
+                             contextsendCommand->deleteLater();
+                         });
+        QString jsonstring =
+            "{\"jsonrpc\": \"2.0\", \"method\":"
+            " \"Input.Down\",\"params\": "
+            "{ }, \"id\":\"sendCommandUp\"}";
+        postRequest(jsonstring);
+        // qCDebug(m_logCategory).noquote() << jsonstring;
+        // postRequest("sendCommandPlay", jsonstring);
+    } else if (command == MediaPlayerDef::C_OK) {
+        QObject::connect(this, &Kodi::requestReadyCommandOk, contextsendCommand,
+                         [=](const QJsonDocument& resultJSONDocument) {
+                             if (resultJSONDocument.object().contains("result")) {
+                                 if (resultJSONDocument.object().value("result") == "OK") {
+                                 } else {
+                                 }
+                             }
+                             contextsendCommand->deleteLater();
+                         });
+        QString jsonstring =
+            "{\"jsonrpc\": \"2.0\", \"method\":"
+            " \"Input.Select\",\"params\": "
+            "{ }, \"id\":\"sendCommandOk\"}";
+        postRequest(jsonstring);
+    } else if (command == MediaPlayerDef::C_DOWN) {
+        QObject::connect(this, &Kodi::requestReadyCommandDown, contextsendCommand,
+                         [=](const QJsonDocument& resultJSONDocument) {
+                             if (resultJSONDocument.object().contains("result")) {
+                                 if (resultJSONDocument.object().value("result") == "OK") {
+                                 } else {
+                                 }
+                             }
+                             contextsendCommand->deleteLater();
+                         });
+        QString jsonstring =
+            "{\"jsonrpc\": \"2.0\", \"method\":"
+            " \"Input.Down\",\"params\": "
+            "{ }, \"id\":\"sendCommandDown\"}";
+        postRequest(jsonstring);
+        // qCDebug(m_logCategory).noquote() << jsonstring;
+        // postRequest("sendCommandPlay", jsonstring);
+    } else if (command == MediaPlayerDef::C_RIGHT) {
+        QObject::connect(this, &Kodi::requestReadyCommandRight, contextsendCommand,
+                         [=](const QJsonDocument& resultJSONDocument) {
+                             if (resultJSONDocument.object().contains("result")) {
+                                 if (resultJSONDocument.object().value("result") == "OK") {
+                                 } else {
+                                 }
+                             }
+                             contextsendCommand->deleteLater();
+                         });
+        QString jsonstring =
+            "{\"jsonrpc\": \"2.0\", \"method\":"
+            " \"Input.Right\",\"params\": "
+            "{ }, \"id\":\"sendCommandRight\"}";
+        postRequest(jsonstring);
+        // qCDebug(m_logCategory).noquote() << jsonstring;
+        // postRequest("sendCommandPlay", jsonstring);
+    } else if (command == MediaPlayerDef::C_LEFT) {
+        QObject::connect(this, &Kodi::requestReadyCommandLeft, contextsendCommand,
+                         [=](const QJsonDocument& resultJSONDocument) {
+                             if (resultJSONDocument.object().contains("result")) {
+                                 if (resultJSONDocument.object().value("result") == "OK") {
+                                 } else {
+                                 }
+                             }
+                             contextsendCommand->deleteLater();
+                         });
+        QString jsonstring =
+            "{\"jsonrpc\": \"2.0\", \"method\":"
+            " \"Input.Left\",\"params\": "
+            "{ }, \"id\":\"sendCommandLeft\"}";
+        postRequest(jsonstring);
+    } else if (command == MediaPlayerDef::C_MENU) {
+        QObject::connect(this, &Kodi::requestReadyCommandBack, contextsendCommand,
+                         [=](const QJsonDocument& resultJSONDocument) {
+                             if (resultJSONDocument.object().contains("result")) {
+                                 if (resultJSONDocument.object().value("result") == "OK") {
+                                 } else {
+                                 }
+                             }
+                             contextsendCommand->deleteLater();
+                         });
+        QString jsonstring =
+            "{\"jsonrpc\": \"2.0\", \"method\":"
+            " \"Input.Back\",\"params\": "
+            "{ }, \"id\":\"sendCommandBack\"}";
+        postRequest(jsonstring);
+    } else if (command == MediaPlayerDef::C_CHANNEL_UP) {
+        if (m_currentKodiMediaType == "channel") {
+            QObject::connect(this, &Kodi::requestReadyCommandChannelUp, contextsendCommand,
+                             [=](const QJsonDocument& resultJSONDocument) {
+                                 if (resultJSONDocument.object().contains("result")) {
+                                     if (resultJSONDocument.object().value("result") == "OK") {
+                                         m_progressBarTimer->stop();
+                                         getCurrentPlayer();
+                                     }
+
+                                     contextsendCommand->deleteLater();
+                                     // QObject::disconnect(this, &Kodi::requestReadyCommandNext,
+                                     // contextsendCommand, 0);
+                                 }
+                             });
+            QString jsonstring =
+                "{\"jsonrpc\": \"2.0\", \"method\":"
+                " \"Input.ExecuteAction\",\"params\": "
+                "{ \"action\": \"channelup\" }, \"id\":\"sendCommandChannelUp\"}";
+            postRequest(jsonstring);
+        }
+    } else if (command == MediaPlayerDef::C_CHANNEL_DOWN) {
+        if (m_currentKodiMediaType == "channel") {
+            QObject::connect(this, &Kodi::requestReadyCommandChannelDown, contextsendCommand,
+                             [=](const QJsonDocument& resultJSONDocument) {
+                                 if (resultJSONDocument.object().contains("result")) {
+                                     if (resultJSONDocument.object().value("result") == "OK") {
+                                         m_progressBarTimer->stop();
+                                         getCurrentPlayer();
+                                     }
+
+                                     contextsendCommand->deleteLater();
+                                     // QObject::disconnect(this,
+                                     // &Kodi::requestReadyCommandPrevious, contextsendCommand,
+                                     // 0);
+                                 }
+                             });
+            QString jsonstring =
+                "{\"jsonrpc\": \"2.0\","
+                " \"method\": \"Input.ExecuteAction\","
+                "\"params\": { \"action\": \"channeldown\" }, "
+                "\"id\": \"sendCommandChannelDown\"}";
+            postRequest(jsonstring);
         }
     } else if (command == MediaPlayerDef::C_QUEUE) {
     } else if (command == MediaPlayerDef::C_PAUSE) {
@@ -986,7 +1155,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
             "{\"jsonrpc\": \"2.0\", \"method\": \"Player.Stop\","
             " \"params\": { \"playerid\": " +
             QString::number(m_currentkodiplayerid) + " },\"id\": \"sendCommandPause\"}";
-        postRequest("sendCommandPause", jsonstring);
+        postRequest(jsonstring);
     } else if (command == MediaPlayerDef::C_NEXT) {
         if (m_currentKodiMediaType == "channel") {
             QObject::connect(this, &Kodi::requestReadyCommandNext, contextsendCommand,
@@ -1006,7 +1175,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
                 "{\"jsonrpc\": \"2.0\", \"method\":"
                 " \"Input.ExecuteAction\",\"params\": "
                 "{ \"action\": \"channelup\" }, \"id\":\"sendCommandNext\"}";
-            postRequest("sendCommandNext", jsonstring);
+            postRequest(jsonstring);
         }
     } else if (command == MediaPlayerDef::C_PREVIOUS) {
         if (m_currentKodiMediaType == "channel") {
@@ -1029,7 +1198,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
                 " \"method\": \"Input.ExecuteAction\","
                 "\"params\": { \"action\": \"channeldown\" }, "
                 "\"id\": \"sendCommandPrevious\"}";
-            postRequest("sendCommandPrevious", jsonstring);
+            postRequest(jsonstring);
         }
     } else if (command == MediaPlayerDef::C_VOLUME_SET) {
         // putRequest("/v1/me/player/volume" {{ "volume_percent", param.toString() }} "");
@@ -1060,7 +1229,7 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
     }*/
 }
 
-void Kodi::postRequest(QString callfunction, const QString& param) {
+void Kodi::postRequest(const QString& param) {
     // create new networkacces manager and request
     // QNetworkAccessManager* manager = new QNetworkAccessManager(this);
     QNetworkRequest request(m_kodiJSONRPCUrl);
@@ -1128,6 +1297,22 @@ void Kodi::postRequest(QString callfunction, const QString& param) {
                     emit requestReadyCommandNext(doc);
                 } else if (doc.object().value("id").toString() == "sendCommandPrevious") {
                     emit requestReadyCommandPrevious(doc);
+                } else if (doc.object().value("id").toString() == "sendCommandUp") {
+                    emit requestReadyCommandUp(doc);
+                } else if (doc.object().value("id").toString() == "sendCommandDown") {
+                    emit requestReadyCommandDown(doc);
+                } else if (doc.object().value("id").toString() == "sendCommandLeft") {
+                    emit requestReadyCommandLeft(doc);
+                } else if (doc.object().value("id").toString() == "sendCommandRight") {
+                    emit requestReadyCommandRight(doc);
+                } else if (doc.object().value("id").toString() == "sendCommandOk") {
+                    emit requestReadyCommandOk(doc);
+                } else if (doc.object().value("id").toString() == "sendCommandBack") {
+                    emit requestReadyCommandBack(doc);
+                } else if (doc.object().value("id").toString() == "sendCommandChannelUp") {
+                    emit requestReadyCommandChannelUp(doc);
+                } else if (doc.object().value("id").toString() == "sendCommandChannelDown") {
+                    emit requestReadyCommandChannelDown(doc);
                 } else if (doc.object().value("id").toString() == "ConnectionCheck") {
                     emit requestReadyKodiConnectionCheck(doc);
                 } else if (doc.object().value("id").toString() == "Player.GetActivePlayers" ||
@@ -1136,7 +1321,7 @@ void Kodi::postRequest(QString callfunction, const QString& param) {
                            doc.object().value("id").toString() == "Files.PrepareDownload") {
                     emit requestReadygetCurrentPlayer(doc);
                 } else {
-                    qCWarning(m_logCategory) << "no callback function defined for " << callfunction;
+                    qCWarning(m_logCategory) << "no callback function defined ";
                 }
             } else {
                 if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 0) {
@@ -1155,10 +1340,22 @@ void Kodi::postRequest(QString callfunction, const QString& param) {
 }
 
 void Kodi::onPollingEPGLoadTimerTimeout() {
-    tvheadendGetRequest("/api/serverinfo", {}, "getTVHeadendConnectionCheck");
-    if (!m_flagLoadingEPG && m_mapKodiChannelNumberToTVHeadendUUID.count() > 0) {
-        // getTVEPGfromTVHeadend();
-        // m_flagLoadingEPG = true;
+    //
+    if (m_mapKodiChannelNumberToTVHeadendUUID.count() > 0) {
+        int temp_Timestamp = (m_EPGExpirationTimestamp - (QDateTime(QDate::currentDate()).toTime_t()));
+        if (temp_Timestamp <= 0) {
+            if (m_currentEPGchannelToLoad == m_epgChannelList.count()) {
+                m_EPGExpirationTimestamp =
+                    QDateTime(QDate::currentDate()).toTime_t() + (m_tvProgrammExpireTimeInHours * 3600);
+                m_currentEPGchannelToLoad = 0;
+            } else {
+                getTVEPGfromTVHeadend(m_epgChannelList[m_currentEPGchannelToLoad]);
+                m_currentEPGchannelToLoad++;
+            }
+        } else {
+            // tvheadendGetRequest("/api/serverinfo", {});
+        }
+
         qCDebug(m_logCategory) << "urls" << m_tvheadendJSONUrl;
     }
 }
@@ -1167,11 +1364,11 @@ void Kodi::onPollingTimerTimeout() {
         // qCDebug(m_logCategory) << "polling";
         getCurrentPlayer();
         if (m_timer == 10) {
-            postRequest("ConnectionCheck",
-                        "{ \"jsonrpc\": \"2.0\","
-                        " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
-                        " \"id\":" +
-                            QString::number(m_globalKodiRequestID) + "}");
+            postRequest(
+                "{ \"jsonrpc\": \"2.0\","
+                " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
+                " \"id\":" +
+                QString::number(m_globalKodiRequestID) + "}");
             m_timer = 0;
         } else {
             m_timer++;
@@ -1238,11 +1435,17 @@ void Kodi::showepg() {
                                         "", "", "", "", "", commands);
                 }
             }
-            int i = 1;
+            int     i = 1;
+            QString channelname = "";
             for (int channel : m_epgChannelList) {
-                epgitem->addEPGItem(QString::number(i), 0, i, 170, 40, "epg", "#0000FF", "#FFFFFF",
-                                    m_KodiTVChannelList[channel].toMap().value("label").toString(), "", "", "", "", "",
-                                    commands);
+                for (int j = 0; m_KodiTVChannelList.count() > j; j++) {
+                    if (m_KodiTVChannelList[j].toMap().value("channelnumber").toInt() == channel) {
+                        channelname = m_KodiTVChannelList[j].toMap().value("label").toString();
+                        break;
+                    }
+                }
+                epgitem->addEPGItem(QString::number(i), 0, i, 170, 40, "epg", "#0000FF", "#FFFFFF", channelname, "", "",
+                                    "", "", "", commands);
                 i++;
             }
             for (int i = 0; i < m_currentEPG.length(); i++) {
@@ -1275,10 +1478,10 @@ void Kodi::showepg() {
 
     // m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::NotActive;
     QString jsonstring;
-    postRequest("epg",
-                "{ \"jsonrpc\": \"2.0\","
-                " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
-                " \"id\":\"epg\"}");
+    postRequest(
+        "{ \"jsonrpc\": \"2.0\","
+        " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
+        " \"id\":\"epg\"}");
 }
 
 void Kodi::showepg(int channel) {
@@ -1344,10 +1547,10 @@ void Kodi::showepg(int channel) {
 
     // m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::NotActive;
     QString jsonstring;
-    postRequest("epg",
-                "{ \"jsonrpc\": \"2.0\","
-                " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
-                " \"id\":\"epg\"}");
+    postRequest(
+        "{ \"jsonrpc\": \"2.0\","
+        " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
+        " \"id\":\"epg\"}");
 }
 
 QString Kodi::fixUrl(QString url) {
