@@ -112,6 +112,10 @@ class Kodi : public Integration {
     void requestReadyCommandBack(const QJsonDocument& doc);
     void requestReadyCommandChannelUp(const QJsonDocument& doc);
     void requestReadyCommandChannelDown(const QJsonDocument& doc);
+    void requestReadyCommandMute(const QJsonDocument& doc);
+    void requestReadyKodiApplicationProperties(const QJsonDocument& doc);
+    void requestReadyCommandVolume(const QJsonDocument& doc);
+    void requestReadygetEPG(const QJsonDocument& doc);
 
     // void requestReadyoiu(const QVariantMap& obj, const QString& url);
     // void requestReadyParser(const QJsonDocument& doc, const QString& url);
@@ -139,6 +143,7 @@ class Kodi : public Integration {
     bool    write(QMap<QString, int> map);
     void    kodiconnectioncheck(const QJsonDocument& object);
     void    Tvheadendconnectioncheck(const QJsonDocument& object);
+    void    KodiApplicationProperties();
 
  private:
     bool    m_flagTVHeadendConfigured = false;
@@ -149,7 +154,7 @@ class Kodi : public Integration {
     bool    m_startup = true;
     QString m_entityId;
     bool    m_flage = false;
-    int     m_timer;
+    int     m_timer = 0;
 
     QTimer* m_Timer;
     QTimer* m_pollingTimer;
