@@ -16,6 +16,7 @@
     	"tvheadendclient_port",
         "tvheadendclient_user",
         "tvheadendclient_password",
+        "epgchannels",
         "entity_id"
     ],
     "properties": {
@@ -104,6 +105,16 @@
             "type": "string",
             "title": "Tvheadend client password",
             "description": "Tvheadend client password.",
+            "default": "",
+            "examples": [
+                ""
+            ]
+        },
+        "tvhadendclient_password": {
+            "$id": "#/properties/epgchannels",
+            "type": "string",
+            "title": "EPG channels",
+            "description": "Channels which are dsiplayed in the EPG view (comma seperated)",
             "default": "",
             "examples": [
                 ""
