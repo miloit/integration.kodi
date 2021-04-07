@@ -68,6 +68,7 @@ class KodiPlugin : public Plugin {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// Kodi CLASS
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define MAX_CONNECTIONTRY 4
 
 class Kodi : public Integration {
     Q_OBJECT
@@ -99,6 +100,10 @@ class Kodi : public Integration {
     void requestReadygetTVEPGfromTVHeadend(const QJsonDocument& doc);
     void requestReadygetSingleTVChannelList(const QJsonDocument& doc);
     void requestReadygetCompleteTVChannelList(const QJsonDocument& doc);
+    void requestReadygetKodiAvailableRadioChannelList(const QJsonDocument& doc);
+    void requestReadygetKodiChannelNumberToRadioHeadendUUIDMapping(const QJsonDocument& doc);
+    void requestReadygetCompleteRadioChannelList(const QJsonDocument& doc);
+
     // void requestReadyt(const QVariantMap& obj, const QString& url);
     void requestReadygetCurrentPlayer(const QJsonDocument& doc);
     void requestReadyCommandPlay(const QJsonDocument& doc);
@@ -170,7 +175,10 @@ class Kodi : public Integration {
     // Kodi auth stuff
     QMap<int, QString>            m_mapKodiChannelNumberToTVHeadendUUID;
     QMap<QString, int>            m_mapTVHeadendUUIDToKodiChannelNumber;
+    QMap<int, QString>            m_mapKodiChannelNumberToRadioHeadendUUID;
+    QMap<QString, int>            m_mapRadioHeadendUUIDToKodiChannelNumber;
     QList<QVariant>               m_KodiTVChannelList;
+    QList<QVariant>               m_KodiRadioChannelList;
     KodiGetCurrentPlayerState     m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
     KodiGetCurrentPlayerState     m_KodiNextPlayerState = KodiGetCurrentPlayerState::GetActivePlayers;
     QString                       m_KodiCurrentPlayerThumbnail = "";
@@ -196,6 +204,11 @@ class Kodi : public Integration {
     QNetworkAccessManager* networkManagerKodi;       // = new QNetworkAccessManager(this);
     QNetworkReply*         m_kodireply;
     QNetworkReply*         m_tvreply;
+    BrowseTvChannelModel* tvchannel =
+        new BrowseTvChannelModel("", "", "", "", "", "", {}, nullptr);
+    BrowseEPGModel* epgitem =new BrowseEPGModel("", 0, 0, 0, 0, "", "", "",
+                                                "", "", "", "", "", "", {}, nullptr);
+    int _networktries = 0;
     //bool                   m_flag = false;
     // Kodi API calls
     /*void search(QString query);
@@ -203,11 +216,13 @@ class Kodi : public Integration {
     void search(QString query, QString type, QString limit, QString offset);
     void getAlbum(QString id);*/
     void getSingleTVChannelList(QString id);
-    void getCompleteTVChannelList();
+    void getCompleteTVChannelList(QString param);
     // Kodi Connect API calls
     void getCurrentPlayer();
     void getKodiAvailableTVChannelList();
     void getKodiChannelNumberToTVHeadendUUIDMapping();
+    void getKodiAvailableRadioChannelList();
+    void getKodiChannelNumberToRadioHeadendUUIDMapping();
     // void updateEntity(const QString& entity_id, const QVariantMap& attr);
     void getTVEPGfromTVHeadend(int KodiChannelNumber);
     void getTVChannelLogos();
