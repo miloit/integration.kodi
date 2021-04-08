@@ -167,7 +167,7 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
                       << "SEARCH"
                       << "MEDIAPLAYEREPGVIEW"
                       << "MEDIAPLAYERREMOTE"
-                      << "TVCHANNELLIST";
+                      << "MEDIAPLAYERCHANNELLIST";
     addAvailableEntity(m_entityId, "media_player", integrationId(), friendlyName(), supportedFeatures);
 }
 
@@ -241,7 +241,7 @@ void Kodi::clearMediaPlayerEntity() {
     entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, "");
     // get the artist
     entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, "");
-    entity->updateAttrByIndex(MediaPlayerDef::MEDIAIMAGE, "");
+    entity->updateAttrByIndex(MediaPlayerDef::MEDIAIMAGE, "/images/mini-music-player/no_image.png");
     entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::States::IDLE);
 }
 void Kodi::clientDisconnected() {
@@ -462,14 +462,14 @@ void Kodi::getSingleTVChannelList(QString param) {
                         me->setBrowseModel(tvchannel);
                     }*/
 
-                    BrowseTvChannelModel* tvchannel =
-                        new BrowseTvChannelModel(id, time, title, subtitle, type, image, commands, nullptr);
+                    BrowseChannelModel* tvchannel =
+                        new BrowseChannelModel(id, time, title, subtitle, type, image, commands, nullptr);
 
                     for (const auto& key : currenttvprogramm.keys()) {
                         QDateTime timestamp;
                         timestamp.setTime_t(key.toUInt());
 
-                        tvchannel->addtvchannelItem(
+                        tvchannel->addchannelItem(
                             m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("channelid").toString(),
                             timestamp.toString("hh:mm"), currenttvprogramm.value(key), "", "tvchannel", "", commands);
                     }
@@ -507,9 +507,9 @@ void Kodi::getSingleTVChannelList(QString param) {
                                                .mid(8));
                     QStringList commands = {"PLAY"};
 
-                    BrowseTvChannelModel* tvchannel =
-                        new BrowseTvChannelModel(id, "", title, subtitle, type, image, commands, nullptr);
-                    tvchannel->addtvchannelItem(
+                    BrowseChannelModel* tvchannel =
+                        new BrowseChannelModel(id, "", title, subtitle, type, image, commands, nullptr);
+                    tvchannel->addchannelItem(
                         m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("channelid").toString(), " ",
                         "No programm available", "", "tvchannel", "", commands);
                     if (entity) {
@@ -610,9 +610,9 @@ void Kodi::getSingleTVChannelList(QString param) {
                                                    .mid(8));
                         QStringList commands = {};
 
-                        BrowseTvChannelModel* tvchannel =
-                            new BrowseTvChannelModel(id, "", title, subtitle, type, image, commands, nullptr);
-                        tvchannel->addtvchannelItem(
+                        BrowseChannelModel* tvchannel =
+                            new BrowseChannelModel(id, "", title, subtitle, type, image, commands, nullptr);
+                        tvchannel->addchannelItem(
                             m_KodiTVChannelList[currenttvchannelarrayid].toMap().value("channelid").toString(), "",
                             "No programm available", "", "tvchannel", "", commands);
                         if (entity) {
@@ -777,88 +777,86 @@ void Kodi::getKodiAvailableTVChannelList() {
 void Kodi::getCompleteTVChannelList(QString param) {
     QObject* context_getCompleteTVChannelList = new QObject(context_kodi);
 
-    QObject::connect(
+    /*QObject::connect(
         context_kodi, &Kodi::requestReadygetCompleteTVChannelList, context_getCompleteTVChannelList,
         [=](const QJsonDocument& resultJSONDocument) {
 
 
             if (resultJSONDocument.object().contains("result")) {
-                if (resultJSONDocument.object().value("result").toString() == "pong") {
-                    EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
+                if (resultJSONDocument.object().value("result").toString() == "pong") {*/
+    EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
 
-                    if (param == "Radio") {
-                        QString               channelId = "";
-                        QString               label = "";
-                        QString               thumbnail = "";
-                        QString               unqueId = "";
-                        QString               type = "tvchannellist";
-                        QStringList           commands = {};
+    if (param == "Radio") {
+        QString     channelId = "";
+        QString     label = "";
+        QString     thumbnail = "";
+        QString     unqueId = "";
+        QString     type = "tvchannellist";
+        QStringList commands = {};
 
-                        /*BrowseTvChannelModel* tvchannel =
-                            new BrowseTvChannelModel(channelId, "", label, unqueId, type, thumbnail, commands, nullptr);*/
-                        tvchannel->reset();
-                        for (int i = 0; i < m_KodiRadioChannelList.length(); i++) {
-                            QString thumbnail =
-                                fixUrl(QString::fromStdString(
-                                           QByteArray::fromPercentEncoding(
-                                               m_KodiRadioChannelList[i].toMap().value("thumbnail").toString().toUtf8())
-                                               .toStdString())
-                                           .mid(8));
-                            QStringList commands = {"PLAY"};
-                            tvchannel->addtvchannelItem(m_KodiRadioChannelList[i].toMap().value("channelid").toString(),
-                                                        "", m_KodiRadioChannelList[i].toMap().value("label").toString(),
-                                                        "", type, thumbnail, commands);
-                        }
+        /*BrowseTvChannelModel* tvchannel =
+            new BrowseTvChannelModel(channelId, "", label, unqueId, type, thumbnail, commands, nullptr);*/
+        tvchannel->reset();
+        for (int i = 0; i < m_KodiRadioChannelList.length(); i++) {
+            QString thumbnail = fixUrl(
+                QString::fromStdString(QByteArray::fromPercentEncoding(
+                                           m_KodiRadioChannelList[i].toMap().value("thumbnail").toString().toUtf8())
+                                           .toStdString())
+                    .mid(8));
+            QStringList commands = {"PLAY"};
+            tvchannel->addchannelItem(m_KodiRadioChannelList[i].toMap().value("channelid").toString(), "",
+                                      m_KodiRadioChannelList[i].toMap().value("label").toString(), "", type, thumbnail,
+                                      commands);
+        }
 
-                        if (entity) {
-                            MediaPlayerInterface* me =
-                                static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
-                            me->setBrowseModel(tvchannel);
-                        }
-                    } else {
-                        QString               channelId = "";
-                        QString               label = "";
-                        QString               thumbnail = "";
-                        QString               unqueId = "";
-                        QString               type = "tvchannellist";
-                        QStringList           commands = {};
-                        /*BrowseTvChannelModel* tvchannel =
-                            new BrowseTvChannelModel(channelId, "", label, unqueId, type, thumbnail, commands, nullptr);*/
-tvchannel->reset();
-                        for (int i = 0; i < m_KodiTVChannelList.length(); i++) {
-                            QString thumbnail =
-                                fixUrl(QString::fromStdString(
-                                           QByteArray::fromPercentEncoding(
-                                               m_KodiTVChannelList[i].toMap().value("thumbnail").toString().toUtf8())
-                                               .toStdString())
-                                           .mid(8));
-                            QStringList commands = {"PLAY"};
-                            tvchannel->addtvchannelItem(m_KodiTVChannelList[i].toMap().value("channelid").toString(),
-                                                        "", m_KodiTVChannelList[i].toMap().value("label").toString(),
-                                                        "", type, thumbnail, commands);
-                        }
+        if (entity) {
+            MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
+            tvchannel->update();
+            me->setBrowseModel(tvchannel);
+        }
+    } else {
+        QString     channelId = "";
+        QString     label = "";
+        QString     thumbnail = "";
+        QString     unqueId = "";
+        QString     type = "tvchannellist";
+        QStringList commands = {};
+        /*BrowseTvChannelModel* tvchannel =
+            new BrowseTvChannelModel(channelId, "", label, unqueId, type, thumbnail, commands, nullptr);*/
+        tvchannel->reset();
+        for (int i = 0; i < m_KodiTVChannelList.length(); i++) {
+            QString thumbnail =
+                fixUrl(QString::fromStdString(QByteArray::fromPercentEncoding(
+                                                  m_KodiTVChannelList[i].toMap().value("thumbnail").toString().toUtf8())
+                                                  .toStdString())
+                           .mid(8));
+            QStringList commands = {"PLAY"};
+            tvchannel->addchannelItem(m_KodiTVChannelList[i].toMap().value("channelid").toString(), "",
+                                      m_KodiTVChannelList[i].toMap().value("label").toString(), "", type, thumbnail,
+                                      commands);
+        }
 
-                        if (entity) {
-                            MediaPlayerInterface* me =
-                                static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
-                            me->setBrowseModel(tvchannel);
-                        }
-                    }
-                }
-            }
-            // QObject::disconnect(this, &Kodi::requestReadygetCompleteTVChannelList, context_getCompleteTVChannelList,
-            // 0);
-            context_getCompleteTVChannelList->deleteLater();
-        });
-    qCDebug(m_logCategory) << "GET COMPLETE TV CHANNEL LIST";
-
-    if (m_flagKodiOnline) {
-        QString jsonstring;
-        postRequest(
-            "{ \"jsonrpc\": \"2.0\","
-            " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
-            " \"id\":\"getCompleteTVChannelList\"}");
+        if (entity) {
+            MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
+            tvchannel->update();
+            me->setBrowseModel(tvchannel);
+        }
     }
+    /*}
+}
+// QObject::disconnect(this, &Kodi::requestReadygetCompleteTVChannelList, context_getCompleteTVChannelList,
+// 0);
+context_getCompleteTVChannelList->deleteLater();
+});
+qCDebug(m_logCategory) << "GET COMPLETE TV CHANNEL LIST";
+
+if (m_flagKodiOnline) {
+QString jsonstring;
+postRequest(
+"{ \"jsonrpc\": \"2.0\","
+" \"method\": \"JSONRPC.Ping\", \"params\": {  },"
+" \"id\":\"getCompleteTVChannelList\"}");
+}*/
 }
 
 void Kodi::updateCurrentPlayer(const QJsonDocument& resultJSONDocument) {
@@ -1628,12 +1626,12 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
         }
     } else if (command == MediaPlayerDef::C_GETALBUM) {
         // getAlbum(param.toString());
-    } else if (command == MediaPlayerDef::C_GETTVCHANNELLIST) {
+    } else if (command == MediaPlayerDef::C_GETMEDIAPLAYERCHANNELLIST) {
         qCDebug(m_logCategory) << "debug:" << param;
         if (param == "All" || param == "Radio" || param == "TV") {
             getCompleteTVChannelList(param.toString());
         } else {
-            getCompleteTVChannelList(param.toString());
+            getSingleTVChannelList(param.toString());
         }
     }
     /*else if (command == MediaPlayerDef::C_GETPLAYLIST) {
@@ -1834,14 +1832,14 @@ void Kodi::showepg() {
             QStringList commands = {};
             // 60minuten = 360px; 1min = 6px
             epgitem->reset();
-            //epgitem->~BrowseEPGModel();
-            //epgitem = new BrowseEPGModel("channelId", 20, 1, 400, 40, "epglist", "#FF0000", "#FFFFFF",
-              //                                           "Test", "", "", "", "", "", commands, nullptr);
-            QDateTime       current = QDateTime::currentDateTime();
-            int             hnull = current.time().hour() - 1;
-            int             dnull = current.date().day();
-            int             mnull = current.date().month();
-            int             ynull = current.date().year();
+            // epgitem->~BrowseEPGModel();
+            // epgitem = new BrowseEPGModel("channelId", 20, 1, 400, 40, "epglist", "#FF0000", "#FFFFFF",
+            //                                           "Test", "", "", "", "", "", commands, nullptr);
+            QDateTime current = QDateTime::currentDateTime();
+            int       hnull = current.time().hour() - 1;
+            int       dnull = current.date().day();
+            int       mnull = current.date().month();
+            int       ynull = current.date().year();
             qCDebug(m_logCategory) << "1 for start";
             for (int i = hnull; i < (hnull + 80); i++) {
                 if (i < 24) {
