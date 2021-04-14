@@ -48,7 +48,7 @@
 //// Kodi FACTORY
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const bool USE_WORKER_THREAD = false;
+const bool USE_WORKER_THREAD = true;
 
 class KodiPlugin : public Plugin {
     Q_OBJECT
@@ -124,6 +124,7 @@ class Kodi : public Integration {
     void requestReadyCommandVolume(const QJsonDocument& doc);
     void requestReadygetEPG(const QJsonDocument& doc);
     void requestReadyCommandMenu(const QJsonDocument& doc);
+    void requestReadygetUserPlaylists(const QJsonDocument& doc);
 
     // void requestReadyoiu(const QVariantMap& obj, const QString& url);
     // void requestReadyParser(const QJsonDocument& doc, const QString& url);
@@ -203,7 +204,8 @@ class Kodi : public Integration {
     QNetworkAccessManager* networkManagerKodi;       // = new QNetworkAccessManager(this);
     QNetworkReply*         m_kodireply;
     QNetworkReply*         m_tvreply;
-    BrowseChannelModel*    tvchannel = new BrowseChannelModel("", "", "", "", "", "", {}, nullptr);
+    BrowseChannelModel* tvchannel =
+            new BrowseChannelModel("", "", "", "", "", "", {}, nullptr);
     BrowseEPGModel* epgitem = new BrowseEPGModel("", 0, 0, 0, 0, "", "", "", "", "", "", "", "", "", {}, nullptr);
     int             _networktries = 0;
     // bool                   m_flag = false;
@@ -228,7 +230,7 @@ class Kodi : public Integration {
     void showepg(int channel);
     // get and post requests
     void tvheadendGetRequest(const QString& path, const QList<QPair<QString, QString> >& queryItems);
-
+    void getUserPlaylists();
     // void postRequest(const QString& params, const int& id);
     void postRequest(const QString& jsonstring);
     // void postRequestthumb(const QString& url, const QString& method, const QString& jsonstring);

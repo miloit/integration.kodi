@@ -165,6 +165,7 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
                       << "CHANNEL_DOWN"
                       << "SHUFFLE"
                       << "SEARCH"
+                      << "LIST"
                       << "MEDIAPLAYEREPGVIEW"
                       << "MEDIAPLAYERREMOTE"
                       << "MEDIAPLAYERCHANNELLIST";
@@ -347,7 +348,7 @@ void Kodi::enterStandby() {
     }
 
     if (!m_tvreply->isFinished()) {
-        m_tvreply->abort();
+        m_tv->abort();
     }
 
     if (m_pollingTimer->isActive()) {
@@ -775,7 +776,7 @@ void Kodi::getKodiAvailableTVChannelList() {
 }
 
 void Kodi::getCompleteTVChannelList(QString param) {
-    QObject* context_getCompleteTVChannelList = new QObject(context_kodi);
+   // QObject* context_getCompleteTVChannelList = new QObject(context_kodi);
 
     /*QObject::connect(
         context_kodi, &Kodi::requestReadygetCompleteTVChannelList, context_getCompleteTVChannelList,
@@ -794,8 +795,8 @@ void Kodi::getCompleteTVChannelList(QString param) {
         QString     type = "tvchannellist";
         QStringList commands = {};
 
-        /*BrowseTvChannelModel* tvchannel =
-            new BrowseTvChannelModel(channelId, "", label, unqueId, type, thumbnail, commands, nullptr);*/
+        /*BrowseChannelModel* tvchannel =
+            new BrowseChannelModel(channelId, "", label, unqueId, type, thumbnail, commands, nullptr);*/
         tvchannel->reset();
         for (int i = 0; i < m_KodiRadioChannelList.length(); i++) {
             QString thumbnail = fixUrl(
@@ -811,8 +812,8 @@ void Kodi::getCompleteTVChannelList(QString param) {
 
         if (entity) {
             MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
-            tvchannel->update();
             me->setBrowseModel(tvchannel);
+            tvchannel->update();
         }
     } else {
         QString     channelId = "";
@@ -823,7 +824,10 @@ void Kodi::getCompleteTVChannelList(QString param) {
         QStringList commands = {};
         /*BrowseTvChannelModel* tvchannel =
             new BrowseTvChannelModel(channelId, "", label, unqueId, type, thumbnail, commands, nullptr);*/
+        /*BrowseChannelModel* tvchannel =
+            new BrowseChannelModel(channelId, "", label, unqueId, type, thumbnail, commands, nullptr);*/
         tvchannel->reset();
+        //tvchannel =new BrowseChannelModel("", "", "", "", "", "", {}, nullptr);
         for (int i = 0; i < m_KodiTVChannelList.length(); i++) {
             QString thumbnail =
                 fixUrl(QString::fromStdString(QByteArray::fromPercentEncoding(
@@ -838,8 +842,8 @@ void Kodi::getCompleteTVChannelList(QString param) {
 
         if (entity) {
             MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
-            tvchannel->update();
             me->setBrowseModel(tvchannel);
+            //tvchannel->update();
         }
     }
     /*}
@@ -1626,6 +1630,12 @@ void Kodi::sendCommand(const QString& type, const QString& entityId, int command
         }
     } else if (command == MediaPlayerDef::C_GETALBUM) {
         // getAlbum(param.toString());
+        } else if (command == MediaPlayerDef::C_GETPLAYLIST) {
+        if (param.toString() == "user") {
+            getUserPlaylists();
+        } else {
+            //getPlaylist(param.toString());
+        }
     } else if (command == MediaPlayerDef::C_GETMEDIAPLAYERCHANNELLIST) {
         qCDebug(m_logCategory) << "debug:" << param;
         if (param == "All" || param == "Radio" || param == "TV") {
@@ -1746,8 +1756,9 @@ void Kodi::postRequest(const QString& param) {
                     emit requestReadyKodiConnectionCheck(doc);
                 } else if (doc.object().value("id").toString() == "Application.GetProperties") {
                     emit requestReadyKodiApplicationProperties(doc);
-
-                } else if (doc.object().value("id").toString() == "Player.GetActivePlayers" ||
+                } else if (doc.object().value("id").toString() == "Playlist.GetItems") {
+                    emit requestReadygetUserPlaylists(doc);
+               } else if (doc.object().value("id").toString() == "Player.GetActivePlayers" ||
                            doc.object().value("id").toString() == "Player.GetItem" ||
                            doc.object().value("id").toString() == "Player.GetProperties" ||
                            doc.object().value("id").toString() == "Files.PrepareDownload") {
@@ -1818,8 +1829,8 @@ void Kodi::onProgressBarTimerTimeout() {
 
 void Kodi::showepg() {
     QObject* contextshowepg = new QObject(context_kodi);
-    QObject::connect(
-        context_kodi, &Kodi::requestReadygetEPG, contextshowepg, [=](const QJsonDocument& resultJSONDocument) {
+    /*QObject::connect(
+        context_kodi, &Kodi::requestReadygetEPG, contextshowepg, [=](const QJsonDocument& resultJSONDocument) {*/
             qCDebug(m_logCategory) << "finished request showepg()";
             EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
             QDateTime        timestamp;
@@ -1831,7 +1842,9 @@ void Kodi::showepg() {
             QString     type = "epg";
             QStringList commands = {};
             // 60minuten = 360px; 1min = 6px
-            epgitem->reset();
+            //epgitem->reset();
+            //epgitem->addEPGItem("", 0, 0, 0, 0, "", "", "", "", "", "", "", "", "", {});
+
             // epgitem->~BrowseEPGModel();
             // epgitem = new BrowseEPGModel("channelId", 20, 1, 400, 40, "epglist", "#FF0000", "#FFFFFF",
             //                                           "Test", "", "", "", "", "", commands, nullptr);
@@ -1842,6 +1855,10 @@ void Kodi::showepg() {
             int       ynull = current.date().year();
             qCDebug(m_logCategory) << "1 for start";
             for (int i = hnull; i < (hnull + 80); i++) {
+                qCDebug(m_logCategory) << "xcoor" << ((i - hnull) * 360);
+                if (((((i - hnull) * 360) + 170)+360) > 15000) {
+                    break;
+                }
                 if (i < 24) {
                     epgitem->addEPGItem(QString::number(i), ((i - hnull) * 360) + 170, 0, 360, 40, "epg", "#FF0000",
                                         "#FFFFFF",
@@ -1868,6 +1885,7 @@ void Kodi::showepg() {
                                         "", "", "", "", "", commands);
                 }
             }
+
             int     i = 1;
             QString channelname = "a";
             qCDebug(m_logCategory) << "1 for end";
@@ -1893,14 +1911,24 @@ void Kodi::showepg() {
                 if (m_epgChannelList.contains(m_mapTVHeadendUUIDToKodiChannelNumber.value(channelUuid))) {
                     timestamp.setTime_t(m_currentEPG.value(i).toMap().value("start").toInt());
                     int column = m_mapTVHeadendUUIDToKodiChannelNumber.value(channelUuid);
+
                     if (column != 0) {
                         int h = (timestamp.date().day() - dnull) * 1440 + (timestamp.time().hour() - hnull) * 60 +
                                 timestamp.time().minute();
-                        if (h > 15000) {
-                            //
+                         qCDebug(m_logCategory) << "xcoor2" << h;
+                         int width =
+                             ((ob.toMap().value("stop").toInt() - ob.toMap().value("start").toInt()) / 60) * 6;
+                         if (h <0) {
+                            width = width+h;
+                             h =0;
+
+                         }
+
+                        if (((h*6)+width) > 15000) {
+                            //break;
                         } else {
-                            int width =
-                                ((ob.toMap().value("stop").toInt() - ob.toMap().value("start").toInt()) / 60) * 6;
+
+
                             epgitem->addEPGItem(QString::number(i), (h * 6) + 170, column, width, 40, "epg", "#FFFF00",
                                                 "#FFFFFF", ob.toMap().value("title").toString(), "", "", "", "", "",
                                                 commands);
@@ -1912,7 +1940,8 @@ void Kodi::showepg() {
             qCDebug(m_logCategory) << "3 for end";
             MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
             me->setBrowseModel(epgitem);
-            contextshowepg->deleteLater();
+            //epgitem->update();
+        /*    contextshowepg->deleteLater();
         });
     qCDebug(m_logCategory) << "GET USERS PLAYLIST";
 
@@ -1921,13 +1950,13 @@ void Kodi::showepg() {
     postRequest(
         "{ \"jsonrpc\": \"2.0\","
         " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
-        " \"id\":\"epg\"}");
+        " \"id\":\"epg\"}");*/
 }
 
 void Kodi::showepg(int channel) {
     QObject* contextshowepg = new QObject(context_kodi);
-    QObject::connect(
-        context_kodi, &Kodi::requestReadygetEPG, contextshowepg, [=](const QJsonDocument& resultJSONDocument) {
+    /*QObject::connect(
+        context_kodi, &Kodi::requestReadygetEPG, contextshowepg, [=](const QJsonDocument& resultJSONDocument) {*/
             EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
             QDateTime        timestamp;
 
@@ -1982,16 +2011,17 @@ void Kodi::showepg(int channel) {
             }*/
             MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
             me->setBrowseModel(epgitem);
-            contextshowepg->deleteLater();
-        });
+            //epgitem->update();
+        /*    contextshowepg->deleteLater();
+        });*/
     qCDebug(m_logCategory) << "GET USERS PLAYLIST";
 
     // m_KodiGetCurrentPlayerState = KodiGetCurrentPlayerState::NotActive;
-    QString jsonstring;
+    /*QString jsonstring;
     postRequest(
         "{ \"jsonrpc\": \"2.0\","
         " \"method\": \"JSONRPC.Ping\", \"params\": {  },"
-        " \"id\":\"epg\"}");
+        " \"id\":\"epg\"}");*/
 }
 
 QString Kodi::fixUrl(QString url) {
@@ -2219,4 +2249,64 @@ void Kodi::KodiApplicationProperties() {
         "{ \"jsonrpc\": \"2.0\","
         " \"method\": \"Application.GetProperties\", \"params\" : { \"properties\" : [ \"volume\", \"muted\" ] },"
         " \"id\":\"Application.GetProperties\"}");
+}
+
+
+
+void Kodi::getUserPlaylists() {
+
+    QObject* contextgetUserPlaylists = new QObject(context_kodi);
+
+    QObject::connect(context_kodi, &Kodi::requestReadygetUserPlaylists, contextgetUserPlaylists,
+                     [=](const QJsonDocument& resultJSONDocument) {
+            qCDebug(m_logCategory) << "GET USERS PLAYLIST";
+            QString strJson(resultJSONDocument.toJson(QJsonDocument::Compact));
+            qCDebug(m_logCategory) <<strJson;
+
+            QString     id = "";
+            QString     title = "";
+            QString     subtitle = "";
+            QString     type = "playlist";
+            QString     image = "";
+            QStringList commands = {};
+
+            /*BrowseModel* album = new BrowseModel(nullptr, id, title, subtitle, type, image, commands);
+
+            // add playlists to model
+            QVariantList playlists = map.value("items").toList();
+
+            for (int i = 0; i < playlists.length(); i++) {
+                if (playlists[i].toMap().contains("images") &&
+                    playlists[i].toMap().value("images").toList().length() > 0) {
+                    image = "";
+                    QVariantList images = playlists[i].toMap().value("images").toList();
+                    for (int k = 0; k < images.length(); k++) {
+                        if (images[k].toMap().value("width").toInt() == 300) {
+                            image = images[k].toMap().value("url").toString();
+                        }
+                    }
+                    if (image == "") {
+                        image = playlists[i].toMap().value("images").toList()[0].toMap().value("url").toString();
+                    }
+                }
+
+                QStringList commands = {"PLAY", "PLAYLISTRADIO"};
+                album->addItem(playlists[i].toMap().value("id").toString(),
+                               playlists[i].toMap().value("name").toString(), "", type, image, commands);
+            }
+
+            // update the entity
+            EntityInterface* entity = static_cast<EntityInterface*>(m_entities->getEntityInterface(m_entityId));
+            if (entity) {
+                MediaPlayerInterface* me = static_cast<MediaPlayerInterface*>(entity->getSpecificInterface());
+                me->setBrowseModel(album);
+            }*/
+
+        contextgetUserPlaylists->deleteLater();
+    });
+   postRequest("{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.GetItems\", \"params\": { \"properties\": [\"title\", \"album\", \"artist\", \"duration\"], \"playlistid\": 0 }, \"id\": \"Playlist.GetItems\"}");
+    // postRequest("{\"jsonrpc\": \"2.0\", \"id\": \"Playlist.GetItems\", \"method\": \"Playlist.GetPlaylists\"}");
+    /*postRequest(
+                "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.GetItems\", \"params\": { \"properties\": [\"title\", \"album\", \"artist\", \"duration\"], \"playlistid\": 0 }, \"id\": \"Playlist.GetItems\"}"
+        );*/
 }
