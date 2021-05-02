@@ -23,7 +23,7 @@
  *****************************************************************************/
 
 #include "kodi.h"
-
+#include <QCoreApplication>
 #include <QDataStream>
 #include <QDate>
 #include <QDir>
@@ -168,6 +168,7 @@ Kodi::Kodi(const QVariantMap& config, EntitiesInterface* entities, Notifications
                       << "LIST"
                       << "MEDIAPLAYEREPGVIEW"
                       << "MEDIAPLAYERREMOTE"
+                      << "SPEAKER_CONTROL"
                       << "MEDIAPLAYERCHANNELLIST";
     addAvailableEntity(m_entityId, "media_player", integrationId(), friendlyName(), supportedFeatures);
 }
@@ -1884,6 +1885,7 @@ void Kodi::showepg() {
                                             QString::number(mnull) + "." + QString::number(ynull),
                                         "", "", "", "", "", commands);
                 }
+                QCoreApplication::instance()->processEvents();
             }
 
             int     i = 1;
@@ -1901,6 +1903,7 @@ void Kodi::showepg() {
                                     m_KodiTVChannelList[channel - 1].toMap().value("label").toString(), "", "", "", "",
                                     "", commands);
                 i++;
+                QCoreApplication::instance()->processEvents();
             }
             qCDebug(m_logCategory) << "2 for end";
             i = 0;
@@ -1934,6 +1937,7 @@ void Kodi::showepg() {
                                                 commands);
                         }
                     }
+                    QCoreApplication::instance()->processEvents();
                 }
                 i++;
             }
