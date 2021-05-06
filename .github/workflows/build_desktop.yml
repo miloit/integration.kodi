@@ -72,7 +72,7 @@ jobs:
 
     - name: Set build output directory
       shell: bash
-      run: echo "YIO_BIN=${GITHUB_WORKSPACE}/${BIN_OUTPUT_PATH}" >> $GITHUB_ENV
+      run: echo "YIO_BIN=${GITHUB_WORKSPACE}/${BIN_OUTPUT_PATH}" >> $GITHUB_ENV  
 
     - name: Checkout integrations.library
       uses: actions/checkout@v2

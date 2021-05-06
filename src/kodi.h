@@ -57,7 +57,7 @@ class KodiPlugin : public Plugin {
 
  public:
     KodiPlugin();
-
+       void test();
     // Plugin interface
  protected:
     Integration* createIntegration(const QVariantMap& config, EntitiesInterface* entities,
